@@ -827,7 +827,26 @@ function valid(s){return !!(s&&s.profile&&/^\d{4}-\d{2}-\d{2}$/.test(s.profile.s
 
 let storageOk=(function(){try{localStorage.setItem(KEY+':probe','1');localStorage.removeItem(KEY+':probe');return true;}catch(e){return false;}})();
 function loadState(){try{const raw=localStorage.getItem(KEY);if(!raw)return null;const s=JSON.parse(raw);return valid(s)?s:null;}catch(e){return null;}}
-let S=loadState()||freshState(todayStr());
+/* Arthur credited the two weeks lost to the iPhone storage bug (Mon 5 – Sun 18 Oct 2026): every light white, nothing logged for whisky or back pain. Standalone page only. */
+function creditedState(){
+  const st=freshState('2026-10-05'),s0=dn('2026-10-05');
+  for(let i=0;i<14;i++)st.daily[E.ds(s0+i)]={sleep:6,meals:3,weight:81};
+  [[0,'muscu',{}],[2,'cardio',{full:true,talk:true}],[4,'cross',{rpe7:true}],[7,'muscu',{}],[9,'cardio',{full:true,talk:true}],[11,'cross',{rpe7:true}]]
+    .forEach((x,i)=>st.sessions.push({id:'credit'+i,t:i,date:E.ds(s0+x[0]),type:x[1],data:x[2],flags:{}}));
+  st.meta.credited='2026-10-05/2026-10-18';
+  return st;
+}
+function applyCredit(st){
+  if(!IS_TOP||(st.meta&&st.meta.credited))return st;
+  const c=creditedState();
+  if(st.profile.startDate>c.profile.startDate)st.profile.startDate=c.profile.startDate;
+  Object.keys(c.daily).forEach(d=>{if(!st.daily[d])st.daily[d]=c.daily[d];});
+  const have=new Set(st.sessions.map(s=>s.date+'|'+s.type));
+  c.sessions.forEach(s=>{if(!have.has(s.date+'|'+s.type))st.sessions.push(s);});
+  st.meta=st.meta||{};st.meta.credited=c.meta.credited;
+  return st;
+}
+let S=applyCredit(loadState()||freshState(todayStr()));
 if(!S.meta)S.meta={lastBackup:null};
 let REAL=null,demo=false,C=null,renderedDay=null;
 const ui={logOpen:false,logType:null,logDate:null,ciDate:null,flash:null};
@@ -1194,7 +1213,7 @@ const H={
     arm(b,()=>{if(!s.meta)s.meta={lastBackup:null};S=s;demo=false;REAL=null;persist();ui.logOpen=false;render();toast(tr('tt.restored'));});},
   'demo':()=>{REAL=S;S=generateDemo(todayStr());demo=true;ui.logOpen=false;ui.flash=null;render();showTab('today');toast(tr('tt.exOn'));},
   'exit-demo':()=>{if(REAL)S=REAL;REAL=null;demo=false;ui.logOpen=false;ui.flash=null;render();toast(tr('tt.exOff'));},
-  'reset':b=>arm(b,()=>{S=freshState(todayStr());demo=false;REAL=null;persist();ui.logOpen=false;ui.flash=null;render();toast(tr('tt.allDeleted'));}),
+  'reset':b=>arm(b,()=>{S=freshState(todayStr());S.meta.credited='reset';demo=false;REAL=null;persist();ui.logOpen=false;ui.flash=null;render();toast(tr('tt.allDeleted'));}),
   'goto':b=>showTab(b.dataset.to),
   'dismiss':()=>{ui.flash=null;renderAlerts();},
   'lang':b=>{const l=E.setLang(b.dataset.lang);try{localStorage.setItem(LANGKEY,l);}catch(e){}render();}
