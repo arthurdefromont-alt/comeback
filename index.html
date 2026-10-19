@@ -1,0 +1,1232 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Камбэк"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="theme-color" content="#E7EBEF" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0C0F12" media="(prefers-color-scheme: dark)"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="icon-512.png"><link rel="manifest" href="manifest.webmanifest"><title>Камбэк</title><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#E7EBEF}img{max-width:100%}[hidden]{display:none!important}</style></head><body><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans+Extra+Condensed:wght@600;700;800&family=Fira+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one column of training cards on a steel ground; every unlock is judged by referee lights (white = good lift); tab bar at thumb height. */
+:root{
+  --bg:#E7EBEF;--surface:#F7F9FA;--sunken:#DCE2E8;--ink:#13171C;--muted:#525C67;--line:#C8D0D8;
+  --accent:#1B46C4;--accent-ink:#FFFFFF;--accent-soft:#DAE3FA;
+  --box:#0F1216;--box-ink:#B8C1CB;--box-line:#262C34;
+  --lamp-on:#F8F8EE;--lamp-on-glow:rgba(248,248,238,.55);--lamp-off:#D23A31;--lamp-off-glow:rgba(210,58,49,.45);--lamp-idle:#2B3139;
+  --ok:#21754A;--warn:#8C5C0E;--warn-soft:#F3E7D0;--stop:#B92E27;--stop-soft:#F5DDDB;--shadow:rgba(10,14,20,.16);
+  --f-display:"Fira Sans Extra Condensed","Roboto Condensed","Arial Narrow",sans-serif;
+  --f-body:"Fira Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-data:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --radius:12px;--tabbar:62px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C0F12;--surface:#151A1F;--sunken:#1C2228;--ink:#E4E8EC;--muted:#98A2AD;--line:#29313A;--accent:#7193FF;--accent-ink:#0A0D11;--accent-soft:#1A2440;--box:#06080A;--box-ink:#A9B2BC;--box-line:#1D232A;--lamp-idle:#20262D;--ok:#52C487;--warn:#E2A83F;--warn-soft:#33270F;--stop:#F06860;--stop-soft:#3A1A19;--shadow:rgba(0,0,0,.5);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0C0F12;--surface:#151A1F;--sunken:#1C2228;--ink:#E4E8EC;--muted:#98A2AD;--line:#29313A;--accent:#7193FF;--accent-ink:#0A0D11;--accent-soft:#1A2440;--box:#06080A;--box-ink:#A9B2BC;--box-line:#1D232A;--lamp-idle:#20262D;--ok:#52C487;--warn:#E2A83F;--warn-soft:#33270F;--stop:#F06860;--stop-soft:#3A1A19;--shadow:rgba(0,0,0,.5);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:12px calc(var(--tabbar) + 36px + env(safe-area-inset-bottom,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:8px 12px;margin-bottom:16px;border-bottom:3px solid var(--ink)}
+.brand{display:grid;gap:2px;min-width:0}
+.handle{font-family:var(--f-data);font-size:12px;letter-spacing:.06em;color:var(--muted)}
+.brand-title{font-family:var(--f-display);font-weight:800;font-size:40px;line-height:.9;letter-spacing:.005em;text-transform:uppercase}
+.masthead-side{display:grid;gap:8px;justify-items:end;flex:0 0 auto}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
+.lang button{font-family:var(--f-data);font-size:11.5px;font-weight:600;letter-spacing:.06em;min-width:40px;min-height:30px;padding:4px 8px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.status{font-family:var(--f-data);font-size:12.5px;line-height:1.5;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.status b{color:var(--ink);font-weight:600}
+.stack{display:grid;gap:14px;min-width:0}
+#t-alerts:empty{display:none}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:grid;gap:12px;min-width:0}
+h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.05;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+p{margin:0}
+.eyebrow{font-family:var(--f-data);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.mono{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:14.5px}
+.hint{font-size:13.5px;color:var(--muted)}
+.lede{color:var(--muted);font-size:15px;max-width:60ch}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+.chip{font-family:var(--f-data);font-size:12.5px;font-weight:600;padding:4px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.next-type{font-family:var(--f-display);font-weight:800;font-size:clamp(46px,14vw,64px);line-height:.88;text-transform:uppercase;letter-spacing:-.005em;overflow-wrap:break-word}
+.next-type.long{font-size:clamp(36px,11vw,56px)}
+.ex{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.ex li{display:grid;grid-template-columns:8px minmax(0,1fr);gap:10px;align-items:start}
+.ex li::before{content:"";width:8px;height:8px;margin-top:.5em;border-radius:2px;background:var(--ink)}
+.cue{font-size:14.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+.unlock{font-size:14.5px}
+.unlock .eyebrow{margin-right:6px}
+.plates{display:flex;align-items:flex-end;gap:4px;flex:0 0 auto}
+.plates span{display:block;width:9px;border-radius:2px;background:var(--sunken);border:1px solid var(--line)}
+.plates span:nth-child(1){height:14px}.plates span:nth-child(2){height:18px}.plates span:nth-child(3){height:22px}
+.plates span:nth-child(4){height:26px}.plates span:nth-child(5){height:30px}.plates span:nth-child(6){height:34px}
+.plates span.done{background:var(--ink);border-color:var(--ink)}
+.plates span.cur{background:var(--accent);border-color:var(--accent)}
+.judge{background:var(--box);color:var(--box-ink);border-radius:10px;padding:12px 14px;display:grid;gap:10px;min-width:0}
+.judge-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.judge-title{font-family:var(--f-data);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.judge-count{font-family:var(--f-data);font-size:12px}
+.lamps{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.lamp{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:14.5px;line-height:1.3}
+.bulb{width:14px;height:14px;border-radius:50%;background:var(--lamp-off);box-shadow:0 0 8px var(--lamp-off-glow)}
+.lamp.on .bulb{background:var(--lamp-on);box-shadow:0 0 10px var(--lamp-on-glow)}
+.lamp.on .lamp-label{color:var(--lamp-on)}
+.lamp-val{font-family:var(--f-data);font-size:12px;text-align:right;font-variant-numeric:tabular-nums;max-width:11em}
+.verdict{display:flex;align-items:center;gap:12px;border-top:1px solid var(--box-line);padding-top:10px;font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.05em;text-transform:uppercase;color:var(--lamp-on)}
+.verdict.no{color:var(--box-ink)}
+.three{display:inline-flex;gap:6px;flex:0 0 auto}
+.three i{display:block;width:16px;height:16px;border-radius:50%;background:var(--lamp-on);box-shadow:0 0 10px var(--lamp-on-glow)}
+.verdict.no .three i{background:var(--lamp-idle);box-shadow:none}
+.form{display:grid;gap:14px;border-top:1px solid var(--line);padding-top:14px;min-width:0}
+.field{display:grid;gap:6px;min-width:0}
+.field>label,.lab{font-weight:600;font-size:15px}
+.input{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);width:100%;min-width:0}
+select.input{-webkit-appearance:none;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 55%,calc(100% - 13px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+textarea.input{font-family:var(--f-data);font-size:13px;line-height:1.5;resize:vertical}
+.date-sm{width:auto;padding:6px 10px;font-size:16px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:10px}
+.group{border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;display:grid;gap:10px;min-width:0}
+.group legend{padding:0 6px;font-family:var(--f-data);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.flags legend{color:var(--stop)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font-family:var(--f-data);font-size:15px;min-width:42px;min-height:42px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.check{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start;font-size:15px;cursor:pointer}
+.check input{width:22px;height:22px;margin:0;accent-color:var(--accent)}
+details.more summary{cursor:pointer;font-weight:600;font-size:15px;color:var(--accent)}
+details.more[open]{display:grid;gap:10px}
+.btn{font:inherit;font-weight:700;font-size:16px;letter-spacing:.02em;padding:12px 18px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.warn{background:transparent;border-color:var(--stop);color:var(--stop)}
+.btn.armed,.link.armed{background:var(--stop);border-color:var(--stop);color:var(--surface)}
+.link{font:inherit;font-weight:600;background:none;border:0;padding:4px 6px;border-radius:6px;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.link.danger{color:var(--stop);font-size:14px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.alert{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;display:grid;gap:4px;font-size:15px}
+.alert.stop{background:var(--stop-soft);border-color:var(--stop)}
+.alert.stop strong{color:var(--stop)}
+.alert.warn{background:var(--warn-soft);border-color:var(--warn)}
+.alert.warn strong{color:var(--warn)}
+.alert.info{background:var(--accent-soft);border-color:var(--accent)}
+.alert.win{display:flex;gap:12px;align-items:center;background:var(--box);border-color:var(--box);color:var(--lamp-on)}
+.alert ol{margin:4px 0 0;padding-left:20px;display:grid;gap:4px}
+.alert a{color:var(--accent);font-weight:600;overflow-wrap:anywhere}
+.note{display:grid;gap:6px;padding:2px 2px 0}
+.note p{max-width:62ch}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+.weeks{min-width:640px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+th:first-child,td:first-child{text-align:left}
+th{font-family:var(--f-data);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--sunken)}
+td.bad{color:var(--stop);font-weight:600}
+.freq-table{min-width:540px}
+.freq-table td,.freq-table th{white-space:normal;text-align:left;vertical-align:top}
+.log{list-style:none;margin:0;padding:0;display:grid}
+.log li{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
+.log li:last-child{border-bottom:0}
+.log li.ev{grid-template-columns:56px minmax(0,1fr)}
+.log li.ev strong{color:var(--accent)}
+.li-body{display:grid;gap:2px;font-size:15px;min-width:0}
+.flagtxt{color:var(--stop);font-size:13.5px;font-weight:600}
+.levels{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.levels>li{display:grid;gap:8px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-width:0}
+.levels>li.now{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.levels>li.locked{background:var(--sunken)}
+.lv-head{font-family:var(--f-display);font-weight:700;font-size:19px;text-transform:uppercase;letter-spacing:.02em}
+.lv-head b{color:var(--accent);margin-right:6px}
+.lv-head .blurred{display:inline-block}
+.blurred{filter:blur(5px);-webkit-user-select:none;user-select:none;pointer-events:none}
+.tag{display:inline-block;font-family:var(--f-data);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:8px;vertical-align:middle;line-height:1.4}
+.tag.now{background:var(--accent);color:var(--accent-ink)}
+.tag.done{background:var(--ink);color:var(--surface)}
+.tag.next{border:1px solid var(--accent);color:var(--accent)}
+.tag.locked{border:1px solid var(--line);color:var(--muted)}
+.bullets{margin:0;padding-left:20px;display:grid;gap:8px}
+.bullets li::marker{color:var(--muted)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;box-shadow:0 -4px 16px var(--shadow)}
+.tabbar button{font-family:var(--f-display);font-weight:700;font-size:clamp(12px,3.7vw,16px);letter-spacing:.02em;text-transform:uppercase;background:none;border:0;border-radius:8px;color:var(--muted);padding:11px 2px;cursor:pointer;min-width:0;white-space:nowrap}
+.tabbar button[aria-current="page"]{color:var(--ink);background:var(--sunken)}
+.toast{position:fixed;left:16px;right:16px;margin:0 auto;max-width:480px;bottom:calc(var(--tabbar) + 14px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--ink);color:var(--surface);padding:11px 16px;border-radius:12px;font-weight:600;font-size:15px;text-align:center;box-shadow:0 8px 24px var(--shadow)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="brand"><span class="handle" id="handle">План на 6 месяцев</span><span class="brand-title" id="brand-title">Камбэк</span></div>
+    <div class="masthead-side">
+      <div class="lang" id="lang" role="group" aria-label="Язык"><button type="button" data-act="lang" data-lang="ru" aria-pressed="true">RU</button><button type="button" data-act="lang" data-lang="en" aria-pressed="false">EN</button></div>
+      <div class="status" id="status"></div>
+    </div>
+  </header>
+  <main>
+    <section class="tab" id="today" aria-label="Сегодня">
+      <div class="stack">
+        <div id="t-alerts" class="stack"></div>
+        <div id="t-next"></div>
+        <div id="t-checkin"></div>
+        <aside class="note" id="t-note"></aside>
+      </div>
+    </section>
+    <section class="tab" id="progress" aria-label="Прогресс" hidden></section>
+    <section class="tab" id="plan" aria-label="План" hidden></section>
+    <section class="tab" id="data" aria-label="Данные" hidden></section>
+  </main>
+</div>
+<nav class="tabbar" aria-label="Разделы">
+  <button type="button" data-tab="today" aria-current="page">Сегодня</button>
+  <button type="button" data-tab="progress">Прогресс</button>
+  <button type="button" data-tab="plan">План</button>
+  <button type="button" data-tab="data">Данные</button>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+'use strict';
+/*ENGINE-START*/
+var ENGINE=(function(){
+  const CFG={minDays:21,pauseDays:14,minLogged:5,thr:{2:140,3:150,4:160,5:170},goal:180,stuck:42};
+  const TYPES=['muscu','cardio','cross'];
+  const FREQ_NEED={4:2,5:3,6:4};
+  const RTS=[100,97.8,95.5,93.9,92.2,90.7,89.2,87.8,86.3,85.0,83.7,82.4,81.1,79.9,78.6,77.4,76.2,75.1,73.9,72.3,70.7,69.4,68.0,66.7,65.3,64.0,62.6,61.3,59.9,58.6,57.4];
+  const WT={
+    4:{sleep:5.5,mk:'m3',mn:3,md:5,wh:5,tol:-0.2},
+    5:{sleep:6,mk:'m4',mn:4,md:6,wh:3,tol:0},
+    6:{sleep:6.5,mk:'m4',mn:4,md:6,wh:1,tol:0}
+  };
+  let LANG='ru';
+  function plRu(n,a,b,c){const m=Math.abs(n)%100,d=m%10;if(m>10&&m<20)return c;if(d===1)return a;if(d>1&&d<5)return b;return c;}
+  const trn=n=>plRu(n,'тренировка','тренировки','тренировок');
+
+  const STR={
+  en:{
+    wd:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    mon:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    names:{muscu:'Muscu',cardio:'Cardio',cross:'Cross'},
+    tabs:{today:'Today',progress:'Progress',plan:'Plan',data:'Data'},
+    brand:'Comeback',handle:'Six-month plan',navLabel:'Sections',langLabel:'Language',
+    'st.starts':'Starts <b>{d}</b>',
+    'st.day':'Day <b>{n}</b><br><b>{s}/{f}</b> sessions this week',
+    noteEyebrow:'From Arthur',
+    note:'Don’t expect your 180 bench to come back fast. Training is global, so focus on recovery: that is what unlocks more sessions per week.',
+    'u.kg':'kg','u.kgWeek':'kg/week',
+    'c.minDays':'3 weeks at this level',
+    'v.days':'{n}/{of} days',
+    'c.noPec':'No pec pain in the last 14 days',
+    'v.resumes':'resumes {s}',
+    'c.noStop':'No stop signal in the last 14 days',
+    'c.baseline':'Baseline test logged (day 15 or later)',
+    'c.back3':'Back pain 3/10 or less (7-day average)',
+    'v.logDaily':'log it daily',
+    'c.noPecP1':'No pec pain during P1',
+    'c.bench':'Bench e1RM {thr} kg or more, at RPE {r} or less',
+    'v.best':'best {x}',
+    'v.noSet':'no set yet',
+    'c.back2':'Back pain 2/10 or less (14-day average)',
+    'c.talk2':'Last 2 sessions: full time, no stop, talk test held',
+    'c.recov2':'Last 2 sessions: full time, breathing back before each rest ended',
+    'c.blocks':'Last session: 4 blocks within 5% of each other',
+    'v.logBlocks':'log your 4 blocks',
+    'v.spread':'spread {x}%',
+    'c.rpe7':'Last 2 sessions: every round at RPE 7 or easier',
+    'c.emom':'Last 2 sessions: all 20 minutes held',
+    'c.amrap':'One more full round than your first P4 session',
+    'v.logRounds':'log your rounds',
+    'c.held5':'Last 2 sessions: 5 rounds, kettlebell never down',
+    'c.pace6':'Last session: 6 rounds at the same pace',
+    'w.logged':'{n} or more days logged',
+    'w.sessions':'All sessions done',
+    'w.sleep':'Sleep {h} or more on average',
+    'w.meals':'{mn}+ full meals on {md} days or more',
+    'w.whisky':p=>'Whisky on '+p.n+' evening'+(p.n>1?'s':'')+' or fewer',
+    'w.weightStable':'Weight stable or up',
+    'w.weightNotDown':'Weight not going down',
+    'w.noStop':'No stop signal',
+    'v.noData':'no data',
+    'v.ndays':'{n} days',
+    'v.evenings':p=>p.n+' evening'+(p.n===1?'':'s'),
+    'x.gain':'Weight +0.25 to +0.5 kg per week',
+    'x.needWeeks':'needs 2+ weeks of weight',
+    'x.bench':'Bench test sets stable or rising',
+    'a.demo':'<strong>Example data.</strong> Nothing you do here is saved.',
+    'a.exitDemo':'Exit the example',
+    'a.storage':'<strong>This browser is not saving your data.</strong> Open the link in a normal window (not private mode) and copy your backup code often.',
+    'a.ok':'OK',
+    'a.install':'<strong>Keep your data safe:</strong> add the app to your Home Screen. Open this link in Safari, tap Share, then “Add to Home Screen”, and always open the app from that icon.',
+    'a.frameIOS':'<strong>On iPhone, this link erases your data when you close the browser.</strong> Before closing, copy your backup code (Data tab) into Notes, and restore it there next time.',
+    'a.moved':'<strong>The app has moved.</strong> Open the new link, then move your data with your backup code (Data tab):',
+    'a.stop':'<strong>Stop signal logged.</strong> Stop the session when it happens. If it does not pass, see a doctor and message Arthur. Level-ups resume on {d}.',
+    'a.pec':'<strong>Pec pain logged.</strong> Bench is over for that session. Bench level-ups resume on {d}. A third tear means no 180, ever.',
+    'a.stuck':'<strong>{type}: 6 weeks at P{l}.</strong> Message Arthur so he can adjust it.',
+    'a.backup':'<strong>Back up your data.</strong> It lives only in this browser.',
+    'a.backupBtn':'Copy my backup code',
+    'a.startTitle':'Start here',
+    'a.start1':'Every day, fill the check-in below. It takes 30 seconds.',
+    'a.start2':'Do the next session and log it right after.',
+    'a.start3':'Once a week, copy your backup code (Data tab). Once a month, send Arthur your summary.',
+    'fq.risk1':'Last week was below the lights for {l} per week.',
+    'fq.risk2':'One more week like that and you go back to {m}.',
+    'ev.up':'{type} P{to} unlocked: {name}',
+    'ev.goal':'{type} goal reached',
+    'ev.freqUp':'{n} sessions per week unlocked',
+    'ev.freqDown':'Back to {n} sessions per week',
+    'n.next':'Next session','n.instead':'Logging instead','n.unlock':'Unlock','n.log':'Log this session','n.close':'Close the log',
+    'f.date':'Date','f.session':'Session','f.benchLegend':'Bench test set','f.kg':'kg','f.reps':'Reps','f.rpe':'RPE',
+    'f.rpeHint':'RPE 8 = you had 2 reps left. Leave it empty if you did no test set today.',
+    'f.full':'I did the full time without stopping',
+    'f.talk':'I could say a full sentence the whole time (talk test)',
+    'f.recov':'My breathing was back to talk-test level before each rest ended',
+    'f.blocksLegend':'Distance of each 4-min block','f.blocksHint':'Meters, or kcal on a machine.','f.block':'Block {i}',
+    'f.rpe7':'I finished every round at RPE 7 or easier',
+    'f.emom':'I held all 20 minutes (each minute done before the next began)',
+    'f.rounds':'Full rounds completed',
+    'f.held':'I held all 5 rounds without putting the kettlebell down',
+    'f.pace6':'I held 6 rounds at the same pace',
+    'f.stopLegend':'Stop signals','f.stopHint':'Tick anything that happened. Level-ups pause for 14 days.',
+    'f.save':'Save session',
+    'ci.title':'Daily check-in','ci.dateLabel':'Check-in date',
+    'ci.hint':'Fill what you know now: sleep and weight in the morning, meals, whisky and back in the evening. Save each time.',
+    'ci.sleep':'Sleep last night (hours)','ci.weight':'Morning weight (kg)','ci.meals':'Full meals today',
+    'ci.mealsHint':'Full meal = a big portion of protein + carbs + a fruit or vegetable.',
+    'ci.whisky':'Whisky this evening','ci.no':'No','ci.yes':'Yes',
+    'ci.back':'Back pain today (0 = none, 10 = worst)',
+    'ci.waistSum':'Waist (once a month)','ci.waist':'Waist at the navel (cm)',
+    'ci.save':'Save check-in','ci.clear':'Clear this day',
+    'p.lede':'Every light has to be white to move up. The app checks it each time you log a session.',
+    'p.levelOf':'Level {c} of {n}','p.dayAt':'day {n} at P{l}','p.goalOn':'Goal reached on {d}.',
+    'p.toUnlock':'To unlock P{n} · {name}','p.toGoal':'To reach the goal',
+    'p.yes':'Good lift: unlocks at your next {type} session','p.no':'Not yet',
+    'p.done':' (done)','p.notYet':' (not yet)',
+    'fq.title':'Sessions per week',
+    'fq.top':'Top level reached. Keep at least one full day off each week.',
+    'fq.unlock':'To unlock <b>{T} per week</b>: {need} weeks in a row with every light white. Weeks banked: <b class="mono">{s}/{need}</b>. A week counts once Sunday is over.',
+    'fq.thisWeek':'This week so far (Mon–Sun)','fq.thisYes':'On track this week','fq.thisNo':'Not there yet this week',
+    'fq.across':'Across your last {need} weeks','fq.acrossYes':'On track',
+    'fq.perWeek':'<b class="mono">{l}</b> per week','fq.weekNow':'this week {s}/{l}',
+    'fq.plates':'{l} sessions per week',
+    'wk.title':'Weeks',
+    'wk.cols':['Week of','Sessions','Sleep','3+ meals','4+ meals','Whisky','Back','Weight kg','Bench e1RM'],
+    'wk.this':'This week',
+    'wk.hint':'Meals and whisky are counted in days per week. Sleep, back pain and weight are weekly averages.',
+    'h.title':'Log','h.empty':'Your sessions and level-ups will show up here.','h.delete':'Delete',
+    'd.noTest':'no test set','d.full':'full time','d.cut':'cut short','d.talk':'talk test held','d.recov':'breathing back in time','d.blocks':'blocks {b}',
+    'd.rpe7':'RPE 7 or easier','d.emom':'20 min held','d.rounds':'{n} rounds','d.held':'5 rounds held','d.pace6':'6 rounds, same pace','d.logged':'logged',
+    'pl.how':'How it works',
+    'pl.howList':[
+      'Three sessions in a loop, always in this order: Muscu, Cardio, Cross, then again. The Today tab always shows the next one.',
+      'Each session has 6 levels. You move up when every light is white, never before 3 weeks at a level. The app does it for you when you log.',
+      'The three sessions move at their own pace: you can be Muscu P3 and Cardio P2.',
+      'You see your current level and the next one. The levels after that stay blurred until you get there.',
+      'Sessions per week (3 to 6) unlock with your recovery: sleep, meals, whisky. A week counts once Sunday is over, with at least 5 days logged.',
+      'Two weeks in a row below the lights of your level: you go back one level.',
+      'Stuck 6 weeks at a level: message Arthur.',
+      'Days off: if you want to move, do the back routine (10 min).'],
+    'pl.safety':'Safety rules',
+    'pl.safetyLead':'They come before every level. A third pec tear means no 180, ever.',
+    'pl.safetyList':[
+      'Bench: always with safety arms or a spotter. 1-second pause on the chest, slow descent, grip a little narrower than your competition grip.',
+      'After a heavy set: sit down before you stand up. If your vision goes dark, sit down and stop the set.',
+      'Pec: at the slightest pain, bench is over for the day.',
+      'Stop the session for: pain going down the leg, numbness, chest pain during effort, asthma wheezing, a violent headache during effort. If it does not pass, see a doctor.',
+      'Loads: never more than +2.5 kg per week on bench and +5 kg on lower body, even if it flies.',
+      'Not allowed for these 6 months: heavy conventional deadlift, dips, flyes, Olympic lifts for reps, kipping, box jumps, weighted sit-ups or crunches, med ball slams.',
+      'Asthma: if you have an inhaler, keep it on you at every session.',
+      'At least one full day off per week.'],
+    'pl.muscuHint':'e1RM = your estimated 1-rep max from the test set (kg, reps and RPE), using the RTS chart. Even if your baseline already passes a level, every level lasts at least 3 weeks: your tendons need that time.',
+    'pl.crossLead':'Hard circuits for your breathing, never to technical failure. Allowed moves: kettlebell swing, goblet squat, step-up, push-ups, neutral-grip dumbbell press, row, pull-ups, farmer’s walk, suitcase carry, sled, bike, rower, shadow boxing.',
+    'pl.freqCols':['Level','Unlock','Lights to keep white every week'],
+    'pl.freqRows':[
+      ['3','Start','–'],
+      ['4','2 weeks in a row','All sessions done · 5+ days logged · sleep 5h30+ · 3+ full meals on 5+ days · weight stable or up · whisky on 5 evenings or fewer · no stop signal'],
+      ['5','3 weeks in a row','All sessions done · 5+ days logged · sleep 6h+ · 4+ full meals on 6+ days · weight not going down, and +0.25 to +0.5 kg per week across the 3 weeks · whisky on 3 evenings or fewer · no stop signal'],
+      ['6','4 weeks in a row','Same as 5, with sleep 6h30+ · whisky on 1 evening or fewer · bench test sets stable or rising']],
+    'pl.freqHint':'If your sleep does not move, 4 or 5 sessions per week will be your ceiling, and your levels keep moving up anyway.',
+    'pl.recovery':'Recovery',
+    'pl.recoveryList':[
+      'Sleep: hours from bed to wake-up, logged each morning.',
+      'Full meal: a big portion of protein + carbs + a fruit or vegetable. Best: count to reach 2 g of protein per kg of bodyweight, and fill the rest with carbs to gain the weight you want.',
+      'Whisky: evenings per week. Cut down step by step, never all at once.'],
+    'pl.tags':{done:'Done',now:'Now',next:'Next',locked:'Locked'},
+    'pl.lockedHint':'Unlocks after P{n}.',
+    'dt.sumTitle':'Monthly summary for Arthur',
+    'dt.sumHint':'Copy it and send it to Arthur once a month. It covers your last 4 weeks, and you can add a note before you send it.',
+    'dt.copySum':'Copy summary',
+    'dt.backupTitle':'Backup',
+    'dt.backupHint':'Your data lives only in this browser, on this phone. Copy your backup code once a week and keep it in your Notes app.',
+    'dt.last':'Last backup:','dt.never':'never','dt.copyBackup':'Copy backup code',
+    'dt.restoreLabel':'Restore from a backup code','dt.restorePh':'Paste your backup code here','dt.restore':'Restore',
+    'dt.startTitle':'Start',
+    'dt.startHint':'Change the start date only if you started on another day. Sessions logged before it are ignored.',
+    'dt.startDate':'Start date','dt.startWeight':'Starting weight (kg)','dt.startWaist':'Starting waist (cm)','dt.height':'Height (cm)','dt.save':'Save',
+    'dt.exTitle':'Example','dt.exHint':'See what the app looks like after 6 weeks of training. Nothing is saved while the example is on.',
+    'dt.exShow':'Show the example','dt.exExit':'Exit the example',
+    'dt.resetTitle':'Reset','dt.resetHint':'Deletes all your data in this browser.','dt.resetBtn':'Delete all my data',
+    'tt.copied':'Copied','tt.hold':'Press and hold the text, then tap Copy','tt.confirm':'Tap again to confirm',
+    'tt.pickDate':'Pick a date','tt.future':'That date is in the future','tt.beforeStart':'That date is before your start date (see Data)',
+    'tt.fillTest':'Fill kg, reps and RPE for the test set','tt.checkKg':'Check the kg of your test set','tt.fillBlocks':'Fill all 4 blocks','tt.rounds':'Rounds: a whole number',
+    'tt.warnFast':'More than +2.5 kg per week on bench since {s}. Slow down: your tendons set the pace.',
+    'tt.never10':'Never go to RPE 10.',
+    'tt.savedStop':'Saved. Stop rules apply: read the red box.','tt.sessionSaved':'Session saved',
+    'tt.sleepRange':'Sleep: between 0 and 16 hours','tt.checkWeight':'Check your weight in kg','tt.checkWaist':'Check your waist in cm','tt.ciSaved':'Check-in saved',
+    'tt.pickStart':'Pick a start date','tt.startFuture':'The start date cannot be in the future','tt.saved':'Saved',
+    'tt.dayCleared':'Day cleared','tt.sessionDeleted':'Session deleted','tt.sumCopied':'Summary copied',
+    'tt.backupCopied':'Backup code copied. Paste it in your Notes app.','tt.badBackup':'This is not a valid backup code','tt.restored':'Data restored',
+    'tt.exOn':'Example on. Nothing is saved.','tt.exOff':'Back to your data','tt.allDeleted':'All data deleted',
+    cues:{
+      muscu:'Back routine first: curl-up, side plank, bird dog (5–8 min). Bench with safety arms or a spotter. Sit down before you stand up after a heavy set.',
+      cardio:'Bike, rower, incline walk or run. Talk test (zone 2): you can say a full sentence at any time. Finish with the back routine (10 min).',
+      cross:'Never to technical failure. Allowed moves only (see Plan).'
+    },
+    flags:{pec:'Pec pain',vision:'Vision went dark',leg:'Pain down the leg or numbness',chest:'Chest pain during effort',asthma:'Asthma wheezing',headache:'Violent headache during effort'},
+    levels:{
+      muscu:[
+        {name:'Comeback',items:['Paused bench 4×8 at RPE 6','Goblet squat 3×10','Dumbbell RDL 3×10','Row 3×10','Pull-ups 3×6–8'],test:'Week 3 only: baseline test, bench 5 reps at RPE 8.',unlock:'3 weeks + baseline test + no pec pain + back pain 3/10 or less'},
+        {name:'Volume',items:['Bench: top set of 5 at RPE 7–8, then 3×6 at RPE 7','Squat (goblet or leg press) 4×8','RDL 3×8','Rows and pull-ups 3×8'],test:'Your top set: 5 reps at RPE 7–8.',unlock:'115 kg × 5 at RPE 8 or less (e1RM ≈ 142)'},
+        {name:'Volume to strength',items:['Bench: top set of 5 at RPE 8, then 3×5 at −10%','Squat (front squat or leg press) 4×6','RDL 3×6','Weighted pull-ups 4×5'],test:'Your top set: 5 reps at RPE 8.',unlock:'122.5 kg × 5 at RPE 8 or less (≈ 151) + back pain 2/10 or less over 2 weeks'},
+        {name:'Strength',items:['Bench: top set of 3 at RPE 8, then 3×4 at −8%','Squat 5×4 at RPE 8','Trap bar or RDL 3×5 at RPE 7','Weighted pull-ups 4×4'],test:'Your top set: 3 reps at RPE 8.',unlock:'140 kg × 3 at RPE 8 or less (≈ 162)'},
+        {name:'Heavy strength',items:['Bench: top set of 2 at RPE 8, then 4×3 at −10%','Squat 4×3–4','Trap bar or RDL 3×4','Weighted pull-ups 5×3'],test:'Your top set: 2 reps at RPE 8.',unlock:'152.5 kg × 2 at RPE 8 or less (≈ 171)'},
+        {name:'Validation',items:['Bench: top set of 2–3 at RPE 8–9 (never 10), then 3×3','Everything else as P5','Light week (−40% volume) before the validation'],test:'Your top set: 2–3 reps at RPE 8–9. Never 10.',unlock:'Goal: 167.5 kg × 2 or 162.5 kg × 3 at RPE 9 (≈ 182)'}
+      ],
+      cardio:[
+        {name:'Easy 25',items:['25 min non-stop at talk-test pace'],unlock:'2 full sessions in a row, no stops'},
+        {name:'Easy 35',items:['35 min non-stop at talk-test pace'],unlock:'2 full sessions in a row, no stops'},
+        {name:'Easy 45',items:['45 min non-stop at talk-test pace'],unlock:'2 full sessions in a row, no stops'},
+        {name:'Pickups',items:['35 min at talk-test pace','Then 5 × 1 min faster (RPE 7), 2 min easy between'],unlock:'2 full sessions, breathing back to talk test before each rest ends'},
+        {name:'3-min blocks',items:['30 min at talk-test pace','Then 4 × 3 min at RPE 7–8, 2 min easy between'],unlock:'2 full sessions, breathing back to talk test before each rest ends'},
+        {name:'4×4',items:['25 min at talk-test pace','Then 4 × 4 min at RPE 8, 3 min easy between'],unlock:'Goal: all 4 blocks at the same distance, within 5%'}
+      ],
+      cross:[
+        {name:'3 rounds',items:['3 rounds, 2 min rest','10 goblet squats · 10 push-ups · 10 one-arm dumbbell rows per side · 30 m farmer’s walk · 1 min bike'],unlock:'2 full sessions at RPE 7 or easier'},
+        {name:'4 rounds',items:['4 rounds, 90 s rest','P1 circuit + 15 kettlebell swings + 30 m suitcase carry per side'],unlock:'2 full sessions at RPE 7 or easier'},
+        {name:'EMOM 20',items:['EMOM 20 min, rotating','12 KB swings · 12 push-ups · 12 cal rower · 40 m farmer’s walk'],unlock:'All 20 minutes held, 2 sessions in a row'},
+        {name:'AMRAP 15',items:['AMRAP 15 min','10 loaded step-ups · 10 dumbbell presses · 8 pull-ups · 12 cal bike','Count your rounds'],unlock:'One more full round than your first P4 session'},
+        {name:'Boxing ×5',items:['5 rounds of 3 min, 1 min rest','Each round: 1 min shadow boxing · 1 min KB swings · 1 min carry or sled'],unlock:'5 rounds with the kettlebell never down, 2 sessions in a row'},
+        {name:'Boxing ×6',items:['6 rounds, same format','Heavy bag with wraps if available'],unlock:'Goal: 6 rounds at the same pace'}
+      ]
+    }
+  },
+  ru:{
+    wd:['пн','вт','ср','чт','пт','сб','вс'],
+    mon:['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'],
+    names:{muscu:'Силовая',cardio:'Кардио',cross:'Кросс-тренинг'},
+    tabs:{today:'Сегодня',progress:'Прогресс',plan:'План',data:'Данные'},
+    brand:'Камбэк',handle:'План на 6 месяцев',navLabel:'Разделы',langLabel:'Язык',
+    'st.starts':'Старт <b>{d}</b>',
+    'st.day':'День <b>{n}</b><br>На неделе: <b>{s}/{f}</b>',
+    noteEyebrow:'От Артура',
+    note:'Не жди, что твои 180 в жиме вернутся быстро. Здесь всё связано, так что сосредоточься на восстановлении: именно оно открывает больше тренировок в неделю.',
+    'u.kg':'кг','u.kgWeek':'кг/нед.',
+    'c.minDays':'3 недели на этом уровне',
+    'v.days':'{n}/{of} дн.',
+    'c.noPec':'Без боли в грудной последние 14 дней',
+    'v.resumes':'с {s}',
+    'c.noStop':'Без стоп-сигналов последние 14 дней',
+    'c.baseline':'Стартовый тест записан (с 15-го дня)',
+    'c.back3':'Боль в спине до 3/10 (среднее за 7 дней)',
+    'v.logDaily':'нет данных',
+    'c.noPecP1':'Без боли в грудной за весь P1',
+    'c.bench':'Жим: e1RM от {thr} кг при RPE до {r}',
+    'v.best':'лучший {x}',
+    'v.noSet':'ещё нет',
+    'c.back2':'Боль в спине до 2/10 (среднее за 14 дней)',
+    'c.talk2':'Последние 2 тренировки: всё время без остановок, в разговорном темпе',
+    'c.recov2':'Последние 2 тренировки: всё время, дыхание успевало восстановиться за каждый отдых',
+    'c.blocks':'Последняя тренировка: 4 блока с разницей до 5%',
+    'v.logBlocks':'запиши блоки',
+    'v.spread':'разброс {x}%',
+    'c.rpe7':'Последние 2 тренировки: каждый круг на RPE 7 или легче',
+    'c.emom':'Последние 2 тренировки: все 20 минут выдержаны',
+    'c.amrap':'На 1 полный круг больше, чем в первой тренировке P4',
+    'v.logRounds':'запиши круги',
+    'c.held5':'Последние 2 тренировки: 5 раундов, гиря ни разу не на полу',
+    'c.pace6':'Последняя тренировка: 6 раундов в одном темпе',
+    'w.logged':p=>'Заполнено минимум '+p.n+' '+plRu(p.n,'день','дня','дней'),
+    'w.sessions':'Все тренировки сделаны',
+    'w.sleep':'Сон в среднем от {h}',
+    'w.meals':p=>p.mn+'+ полноценных приёма пищи в день, минимум '+p.md+' '+plRu(p.md,'день','дня','дней'),
+    'w.whisky':p=>'Виски не больше '+p.n+' '+plRu(p.n,'вечера','вечеров','вечеров')+' в неделю',
+    'w.weightStable':'Вес стабилен или растёт',
+    'w.weightNotDown':'Вес не снижается',
+    'w.noStop':'Без стоп-сигналов',
+    'v.noData':'нет данных',
+    'v.ndays':'{n} дн.',
+    'v.evenings':p=>p.n+' '+plRu(p.n,'вечер','вечера','вечеров'),
+    'x.gain':'Вес +0,25…+0,5 кг в неделю',
+    'x.needWeeks':'мало данных',
+    'x.bench':'Тестовые подходы в жиме не падают',
+    'a.demo':'<strong>Это пример.</strong> Здесь ничего не сохраняется.',
+    'a.exitDemo':'Выйти из примера',
+    'a.storage':'<strong>Этот браузер не сохраняет твои данные.</strong> Открой ссылку в обычном окне (не в режиме инкогнито) и почаще копируй код резервной копии.',
+    'a.ok':'Понятно',
+    'a.install':'<strong>Чтобы данные не пропадали,</strong> добавь приложение на экран «Домой»: открой эту ссылку в Safari, нажми «Поделиться» → «На экран „Домой“» и дальше открывай приложение только с этой иконки.',
+    'a.frameIOS':'<strong>На iPhone эта ссылка стирает данные, когда закрываешь браузер.</strong> Перед закрытием копируй код резервной копии (вкладка «Данные») в «Заметки», а в следующий раз восстанавливай его там же.',
+    'a.moved':'<strong>Приложение переехало.</strong> Открой новую ссылку и перенеси данные через код резервной копии (вкладка «Данные»):',
+    'a.stop':'<strong>Записан стоп-сигнал.</strong> Если такое случается, прекращай тренировку. Если не проходит — иди к врачу и напиши Артуру. Новые уровни снова откроются с {s}.',
+    'a.pec':'<strong>Записана боль в грудной.</strong> Жим на этой тренировке закончен. Уровни в жиме снова откроются с {s}. Третий разрыв — и 180 не будет уже никогда.',
+    'a.stuck':'<strong>{type}: 6 недель на P{l}.</strong> Напиши Артуру, чтобы он подправил план.',
+    'a.backup':'<strong>Сделай резервную копию.</strong> Данные хранятся только в этом браузере.',
+    'a.backupBtn':'Скопировать код копии',
+    'a.startTitle':'С чего начать',
+    'a.start1':'Каждый день заполняй отчёт за день ниже — это 30 секунд.',
+    'a.start2':'Делай следующую тренировку и сразу записывай её.',
+    'a.start3':'Раз в неделю копируй код резервной копии (вкладка «Данные»). Раз в месяц отправляй Артуру сводку.',
+    'fq.risk1':'Прошлая неделя: не все лампы белые для уровня «{l} в неделю».',
+    'fq.risk2':'Ещё одна такая неделя — и вернёшься к {m} тренировкам в неделю.',
+    'ev.up':p=>p.type+': открыт P'+p.to+' «'+p.name+'»',
+    'ev.goal':'{type}: цель достигнута',
+    'ev.freqUp':p=>'Открыто: '+p.n+' '+trn(p.n)+' в неделю',
+    'ev.freqDown':p=>'Снова '+p.n+' '+trn(p.n)+' в неделю',
+    'n.next':'Следующая тренировка','n.instead':'Записываешь другую','n.unlock':'Переход','n.log':'Записать тренировку','n.close':'Закрыть запись',
+    'f.date':'Дата','f.session':'Тренировка','f.benchLegend':'Тестовый подход в жиме','f.kg':'кг','f.reps':'Повторы','f.rpe':'RPE',
+    'f.rpeHint':'RPE 8 = в запасе оставалось 2 повтора. Оставь пустым, если сегодня не было тестового подхода.',
+    'f.full':'Я сделал всё время без остановок',
+    'f.talk':'Я всё время мог сказать целое предложение (разговорный тест)',
+    'f.recov':'Дыхание успевало вернуться к разговорному темпу до конца каждого отдыха',
+    'f.blocksLegend':'Дистанция каждого 4-минутного блока','f.blocksHint':'Метры или ккал на тренажёре.','f.block':'Блок {i}',
+    'f.rpe7':'Каждый круг был на RPE 7 или легче',
+    'f.emom':'Я выдержал все 20 минут (каждую минуту успевал до начала следующей)',
+    'f.rounds':'Сколько полных кругов сделал',
+    'f.held':'Я выдержал все 5 раундов и ни разу не поставил гирю',
+    'f.pace6':'Я выдержал 6 раундов в одном темпе',
+    'f.stopLegend':'Стоп-сигналы','f.stopHint':'Отметь всё, что было. Новые уровни встанут на паузу на 14 дней.',
+    'f.save':'Сохранить тренировку',
+    'ci.title':'Отчёт за день','ci.dateLabel':'Дата отчёта',
+    'ci.hint':'Заполняй то, что уже знаешь: сон и вес — утром, еду, виски и спину — вечером. Каждый раз сохраняй.',
+    'ci.sleep':'Сон этой ночью (часы)','ci.weight':'Вес утром (кг)','ci.meals':'Полноценных приёмов пищи сегодня',
+    'ci.mealsHint':'Полноценный приём пищи = большая порция белка + углеводы + фрукт или овощ.',
+    'ci.whisky':'Виски сегодня вечером','ci.no':'Нет','ci.yes':'Да',
+    'ci.back':'Боль в спине сегодня (0 = нет, 10 = сильнейшая)',
+    'ci.waistSum':'Талия (раз в месяц)','ci.waist':'Талия на уровне пупка (см)',
+    'ci.save':'Сохранить отчёт','ci.clear':'Очистить день',
+    'p.lede':'Чтобы перейти на следующий уровень, все лампы должны быть белыми. Приложение проверяет это каждый раз, когда ты записываешь тренировку.',
+    'p.levelOf':'Уровень {c} из {n}','p.dayAt':'день {n} на P{l}','p.goalOn':'Цель достигнута {s}.',
+    'p.toUnlock':'Чтобы открыть P{n} · {name}','p.toGoal':'Чтобы достичь цели',
+    'p.yes':'Засчитано: откроется на следующей тренировке','p.no':'Пока нет',
+    'p.done':' (готово)','p.notYet':' (пока нет)',
+    'fq.title':'Тренировок в неделю',
+    'fq.top':'Максимальный уровень. Оставляй минимум один полный выходной в неделю.',
+    'fq.unlock':p=>'Чтобы открыть <b>'+p.T+' в неделю</b>: '+p.need+' '+plRu(p.need,'неделя','недели','недель')+' подряд, все лампы белые. Засчитано недель: <b class="mono">'+p.s+'/'+p.need+'</b>. Неделя засчитывается после воскресенья.',
+    'fq.thisWeek':'Эта неделя (пн–вс)','fq.thisYes':'На этой неделе всё по плану','fq.thisNo':'На этой неделе пока не всё',
+    'fq.across':p=>'За последние '+p.need+' '+plRu(p.need,'неделю','недели','недель'),'fq.acrossYes':'Всё по плану',
+    'fq.perWeek':'<b class="mono">{l}</b> в неделю','fq.weekNow':'эта неделя {s}/{l}',
+    'fq.plates':p=>p.l+' '+trn(p.l)+' в неделю',
+    'wk.title':'Недели',
+    'wk.cols':['Неделя с','Тренировки','Сон','3+ приёма','4+ приёма','Виски','Спина','Вес, кг','Жим e1RM'],
+    'wk.this':'Эта неделя',
+    'wk.hint':'Приёмы пищи и виски считаются в днях за неделю. Сон, боль в спине и вес — средние за неделю.',
+    'h.title':'Журнал','h.empty':'Здесь появятся твои тренировки и новые уровни.','h.delete':'Удалить',
+    'd.noTest':'без тестового подхода','d.full':'всё время','d.cut':'не до конца','d.talk':'разговорный темп','d.recov':'дыхание успевало','d.blocks':'блоки {b}',
+    'd.rpe7':'RPE 7 или легче','d.emom':'20 мин выдержаны','d.rounds':p=>p.n+' '+plRu(p.n,'круг','круга','кругов'),'d.held':'5 раундов выдержаны','d.pace6':'6 раундов в одном темпе','d.logged':'записано',
+    'pl.how':'Как это работает',
+    'pl.howList':[
+      'Три тренировки по кругу, всегда в таком порядке: Силовая, Кардио, Кросс-тренинг — и снова сначала. Во вкладке «Сегодня» всегда видна следующая.',
+      'У каждой тренировки 6 уровней. Переходишь выше, когда все лампы белые, но не раньше чем через 3 недели на уровне. Приложение делает это само, когда ты записываешь тренировку.',
+      'Каждая тренировка прогрессирует в своём темпе: можно быть на Силовой P3 и на Кардио P2.',
+      'Ты видишь свой текущий уровень и следующий. Остальные размыты, пока ты до них не дойдёшь.',
+      'Число тренировок в неделю (от 3 до 6) открывается за счёт восстановления: сна, еды, виски. Неделя засчитывается после воскресенья, если заполнено минимум 5 дней.',
+      'Две недели подряд не все лампы белые — возвращаешься на уровень ниже.',
+      'Застрял на одном уровне 6 недель — напиши Артуру.',
+      'В дни отдыха, если хочется подвигаться, делай комплекс для спины (10 мин).'],
+    'pl.safety':'Правила безопасности',
+    'pl.safetyLead':'Они важнее любого уровня. Третий разрыв грудной — и 180 не будет уже никогда.',
+    'pl.safetyList':[
+      'Жим: всегда со страховочными упорами или со страхующим. Пауза 1 секунда на груди, медленное опускание, хват чуть уже соревновательного.',
+      'После тяжёлого подхода сначала сядь, потом вставай. Если темнеет в глазах — садись и прекращай подход.',
+      'Грудная мышца: при малейшей боли жим на сегодня закончен.',
+      'Прекращай тренировку, если боль отдаёт в ногу, появилось онемение, боль в груди при нагрузке, свистящее дыхание при астме или сильная головная боль при нагрузке. Если не проходит — иди к врачу.',
+      'Веса: не больше +2,5 кг в неделю в жиме и +5 кг в упражнениях на ноги, даже если вес летит.',
+      'Под запретом на эти 6 месяцев: тяжёлая классическая становая тяга, отжимания на брусьях, разводки, рывок и толчок на повторы, киппинг, прыжки на тумбу, скручивания с отягощением, броски медбола в пол.',
+      'Астма: если есть ингалятор, держи его при себе на каждой тренировке.',
+      'Минимум один полный выходной в неделю.'],
+    'pl.muscuHint':'e1RM — расчётный одноповторный максимум по тестовому подходу (кг, повторы и RPE), по таблице RTS. Даже если стартовый тест уже проходит уровень, каждый уровень длится минимум 3 недели: сухожилиям нужно это время.',
+    'pl.crossLead':'Тяжёлые круговые на дыхалку, никогда до технического отказа. Разрешённые упражнения: махи гирей, гоблет-присед, зашагивания на тумбу, отжимания, жим гантелей нейтральным хватом, тяга в наклоне, подтягивания, прогулка фермера, переноска груза в одной руке, сани, велотренажёр, гребной тренажёр, бой с тенью.',
+    'pl.freqCols':['Уровень','Как открыть','Какие лампы должны быть белыми каждую неделю'],
+    'pl.freqRows':[
+      ['3','Старт','–'],
+      ['4','2 недели подряд','Все тренировки сделаны · заполнено 5+ дней · сон от 5 ч 30 мин · 3+ полноценных приёма пищи минимум 5 дней · вес стабилен или растёт · виски не больше 5 вечеров · без стоп-сигналов'],
+      ['5','3 недели подряд','Все тренировки сделаны · заполнено 5+ дней · сон от 6 ч · 4+ полноценных приёма пищи минимум 6 дней · вес не снижается и растёт на +0,25…+0,5 кг в неделю за 3 недели · виски не больше 3 вечеров · без стоп-сигналов'],
+      ['6','4 недели подряд','Как для 5, плюс: сон от 6 ч 30 мин · виски не больше 1 вечера · тестовые подходы в жиме не падают']],
+    'pl.freqHint':'Если сон не улучшится, твоим потолком будут 4–5 тренировок в неделю, но уровни всё равно продолжат расти.',
+    'pl.recovery':'Восстановление',
+    'pl.recoveryList':[
+      'Сон: часы от отбоя до подъёма, записывай каждое утро.',
+      'Полноценный приём пищи: большая порция белка + углеводы + фрукт или овощ. Лучше всего считать: 2 г белка на кг веса тела, а остальное добирать в основном углеводами, чтобы набрать нужный вес.',
+      'Виски: сколько вечеров в неделю. Сокращай постепенно, никогда не бросай резко.'],
+    'pl.tags':{done:'Пройден',now:'Сейчас',next:'Дальше',locked:'Закрыт'},
+    'pl.lockedHint':'Откроется после P{n}.',
+    'dt.sumTitle':'Сводка для Артура за месяц',
+    'dt.sumHint':'Скопируй и отправь Артуру раз в месяц. Сводка — за последние 4 недели и на английском, чтобы Артур мог её прочитать. Перед отправкой можешь дописать заметку.',
+    'dt.copySum':'Скопировать сводку',
+    'dt.backupTitle':'Резервная копия',
+    'dt.backupHint':'Твои данные хранятся только в этом браузере, на этом телефоне. Раз в неделю копируй код резервной копии и сохраняй его в «Заметках».',
+    'dt.last':'Последняя копия:','dt.never':'ещё не было','dt.copyBackup':'Скопировать код копии',
+    'dt.restoreLabel':'Восстановить из кода копии','dt.restorePh':'Вставь сюда код копии','dt.restore':'Восстановить',
+    'dt.startTitle':'Старт',
+    'dt.startHint':'Меняй дату старта, только если начал в другой день. Тренировки до этой даты не учитываются.',
+    'dt.startDate':'Дата старта','dt.startWeight':'Стартовый вес (кг)','dt.startWaist':'Стартовая талия (см)','dt.height':'Рост (см)','dt.save':'Сохранить',
+    'dt.exTitle':'Пример','dt.exHint':'Посмотри, как приложение выглядит после 6 недель тренировок. Пока включён пример, ничего не сохраняется.',
+    'dt.exShow':'Показать пример','dt.exExit':'Выйти из примера',
+    'dt.resetTitle':'Сброс','dt.resetHint':'Удаляет все твои данные в этом браузере.','dt.resetBtn':'Удалить все мои данные',
+    'tt.copied':'Скопировано','tt.hold':'Зажми текст и нажми «Копировать»','tt.confirm':'Нажми ещё раз, чтобы подтвердить',
+    'tt.pickDate':'Выбери дату','tt.future':'Эта дата ещё не наступила','tt.beforeStart':'Эта дата раньше даты старта (см. «Данные»)',
+    'tt.fillTest':'Заполни кг, повторы и RPE тестового подхода','tt.checkKg':'Проверь вес тестового подхода','tt.fillBlocks':'Заполни все 4 блока','tt.rounds':'Круги: целое число',
+    'tt.warnFast':'Больше +2,5 кг в неделю в жиме с {s}. Сбавь темп: скорость задают сухожилия.',
+    'tt.never10':'Никогда не доходи до RPE 10.',
+    'tt.savedStop':'Сохранено. Действуют стоп-правила: прочитай красный блок.','tt.sessionSaved':'Тренировка сохранена',
+    'tt.sleepRange':'Сон: от 0 до 16 часов','tt.checkWeight':'Проверь вес в кг','tt.checkWaist':'Проверь талию в см','tt.ciSaved':'Отчёт сохранён',
+    'tt.pickStart':'Выбери дату старта','tt.startFuture':'Дата старта не может быть в будущем','tt.saved':'Сохранено',
+    'tt.dayCleared':'День очищен','tt.sessionDeleted':'Тренировка удалена','tt.sumCopied':'Сводка скопирована',
+    'tt.backupCopied':'Код копии скопирован. Вставь его в «Заметки».','tt.badBackup':'Это не код резервной копии','tt.restored':'Данные восстановлены',
+    'tt.exOn':'Пример включён. Ничего не сохраняется.','tt.exOff':'Снова твои данные','tt.allDeleted':'Все данные удалены',
+    cues:{
+      muscu:'Сначала комплекс для спины: скручивание Макгилла, боковая планка, «птица-собака» (5–8 мин). Жим — только со страховочными упорами или страхующим. После тяжёлого подхода сначала сядь, потом вставай.',
+      cardio:'Велотренажёр, гребной тренажёр, ходьба в горку или бег. Разговорный тест (зона 2): в любой момент можешь сказать целое предложение. В конце — комплекс для спины (10 мин).',
+      cross:'Никогда до технического отказа. Только разрешённые упражнения (см. «План»).'
+    },
+    flags:{pec:'Боль в грудной мышце',vision:'Потемнело в глазах',leg:'Боль отдаёт в ногу или онемение',chest:'Боль в груди при нагрузке',asthma:'Свистящее дыхание при астме',headache:'Сильная головная боль при нагрузке'},
+    levels:{
+      muscu:[
+        {name:'Возвращение',items:['Жим лёжа с паузой 4×8 на RPE 6','Гоблет-присед 3×10','Румынская тяга с гантелями 3×10','Тяга в наклоне 3×10','Подтягивания 3×6–8'],test:'Только на 3-й неделе: стартовый тест — жим на 5 повторов на RPE 8.',unlock:'3 недели + стартовый тест + без боли в грудной + боль в спине до 3/10'},
+        {name:'Объём',items:['Жим: топ-сет на 5 повторов на RPE 7–8, затем 3×6 на RPE 7','Присед (гоблет или жим ногами) 4×8','Румынская тяга 3×8','Тяга в наклоне и подтягивания 3×8'],test:'Твой топ-сет: 5 повторов на RPE 7–8.',unlock:'115 кг × 5 на RPE 8 или легче (e1RM ≈ 142)'},
+        {name:'От объёма к силе',items:['Жим: топ-сет на 5 повторов на RPE 8, затем 3×5 с весом на 10% меньше','Присед (фронтальный или жим ногами) 4×6','Румынская тяга 3×6','Подтягивания с отягощением 4×5'],test:'Твой топ-сет: 5 повторов на RPE 8.',unlock:'122,5 кг × 5 на RPE 8 или легче (≈ 151) + боль в спине до 2/10 две недели'},
+        {name:'Сила',items:['Жим: топ-сет на 3 повтора на RPE 8, затем 3×4 с весом на 8% меньше','Присед 5×4 на RPE 8','Тяга с трэп-грифом или румынская тяга 3×5 на RPE 7','Подтягивания с отягощением 4×4'],test:'Твой топ-сет: 3 повтора на RPE 8.',unlock:'140 кг × 3 на RPE 8 или легче (≈ 162)'},
+        {name:'Тяжёлый блок',items:['Жим: топ-сет на 2 повтора на RPE 8, затем 4×3 с весом на 10% меньше','Присед 4×3–4','Тяга с трэп-грифом или румынская тяга 3×4','Подтягивания с отягощением 5×3'],test:'Твой топ-сет: 2 повтора на RPE 8.',unlock:'152,5 кг × 2 на RPE 8 или легче (≈ 171)'},
+        {name:'Зачёт',items:['Жим: топ-сет на 2–3 повтора на RPE 8–9 (никогда не 10), затем 3×3','Остальное как в P5','Лёгкая неделя (объём −40%) перед зачётом'],test:'Твой топ-сет: 2–3 повтора на RPE 8–9. Никогда не 10.',unlock:'Цель: 167,5 кг × 2 или 162,5 кг × 3 на RPE 9 (≈ 182)'}
+      ],
+      cardio:[
+        {name:'Легко 25',items:['25 мин без остановки в разговорном темпе'],unlock:'2 полные тренировки подряд без остановок'},
+        {name:'Легко 35',items:['35 мин без остановки в разговорном темпе'],unlock:'2 полные тренировки подряд без остановок'},
+        {name:'Легко 45',items:['45 мин без остановки в разговорном темпе'],unlock:'2 полные тренировки подряд без остановок'},
+        {name:'Ускорения',items:['35 мин в разговорном темпе','Затем 5 × 1 мин быстрее (RPE 7), между ними 2 мин легко'],unlock:'2 полные тренировки, дыхание возвращается к разговорному темпу до конца каждого отдыха'},
+        {name:'Блоки по 3 мин',items:['30 мин в разговорном темпе','Затем 4 × 3 мин на RPE 7–8, между ними 2 мин легко'],unlock:'2 полные тренировки, дыхание возвращается к разговорному темпу до конца каждого отдыха'},
+        {name:'4×4',items:['25 мин в разговорном темпе','Затем 4 × 4 мин на RPE 8, между ними 3 мин легко'],unlock:'Цель: все 4 блока на одну дистанцию, разница не больше 5%'}
+      ],
+      cross:[
+        {name:'3 круга',items:['3 круга, отдых 2 мин','10 гоблет-приседаний · 10 отжиманий · 10 тяг гантели одной рукой на каждую сторону · 30 м прогулки фермера · 1 мин на велотренажёре'],unlock:'2 полные тренировки на RPE 7 или легче'},
+        {name:'4 круга',items:['4 круга, отдых 90 с','Круг из P1 + 15 махов гирей + 30 м переноски груза в одной руке на каждую сторону'],unlock:'2 полные тренировки на RPE 7 или легче'},
+        {name:'EMOM 20',items:['EMOM 20 мин по кругу (каждую минуту — следующее упражнение)','12 махов гирей · 12 отжиманий · 12 кал на гребном тренажёре · 40 м прогулки фермера'],unlock:'Все 20 минут выдержаны, 2 тренировки подряд'},
+        {name:'AMRAP 15',items:['AMRAP 15 мин (максимум кругов)','10 зашагиваний на тумбу с весом · 10 жимов гантелей · 8 подтягиваний · 12 кал на велотренажёре','Считай круги'],unlock:'На 1 полный круг больше, чем в первой тренировке P4'},
+        {name:'Бокс ×5',items:['5 раундов по 3 мин, отдых 1 мин','Каждый раунд: 1 мин бой с тенью · 1 мин махи гирей · 1 мин переноска или сани'],unlock:'5 раундов, гиря ни разу не на полу, 2 тренировки подряд'},
+        {name:'Бокс ×6',items:['6 раундов, тот же формат','Боксёрский мешок с бинтами, если есть'],unlock:'Цель: 6 раундов в одном темпе'}
+      ]
+    }
+  }
+  };
+
+  function D(){return STR[LANG]||STR.en;}
+  function V(k){const d=D();return d[k]!=null?d[k]:STR.en[k];}
+  function tr(k,p){let s=V(k);if(s==null)return k;if(typeof s==='function')return s(p||{});return String(s).replace(/\{(\w+)\}/g,(m,x)=>p&&p[x]!=null?String(p[x]):m);}
+  function setLang(l){LANG=STR[l]?l:'ru';return LANG;}
+  function getLang(){return LANG;}
+  function withLang(l,fn){const prev=LANG;LANG=STR[l]?l:prev;try{return fn();}finally{LANG=prev;}}
+  function nf(x){const s=String(x);return LANG==='ru'?s.replace('.',','):s;}
+  function scramble(s){
+    let seed=String(s).length*7+3;const LAT='abcdefghijklmnopqrstuvwxyz',CYR='абвгдежзиклмнопрстуфхцчшщыэюя';
+    return String(s).replace(/[A-Za-z0-9Ѐ-ӿ]/g,c=>{seed=(seed*31+7)%997;
+      if(c>='0'&&c<='9')return String(seed%10);
+      const set=/[Ѐ-ӿ]/.test(c)?CYR:LAT,ch=set[seed%set.length];
+      return c!==c.toLowerCase()?ch.toUpperCase():ch;});
+  }
+
+  function pct(reps,rpe){const i=Math.round((reps+(10-rpe)-1)*2);return RTS[Math.max(0,Math.min(RTS.length-1,i))]/100;}
+  function e1rm(kg,reps,rpe){return kg/pct(reps,rpe);}
+  function dn(s){const p=String(s).split('-');return Math.round(Date.UTC(+p[0],+p[1]-1,+p[2])/864e5);}
+  function ds(n){return new Date(n*864e5).toISOString().slice(0,10);}
+  function wday(n){return (new Date(n*864e5).getUTCDay()+6)%7;}
+  function wkStart(n){return n-wday(n);}
+  function isNum(v){return typeof v==='number'&&isFinite(v);}
+  function r1(x){return Math.round(x*10)/10;}
+  function fmtDay(n){const d=new Date(n*864e5),w=V('wd')[wday(n)],m=V('mon')[d.getUTCMonth()];return LANG==='ru'?w+', '+d.getUTCDate()+' '+m:w+' '+d.getUTCDate()+' '+m;}
+  function fmtShort(n){const d=new Date(n*864e5);return d.getUTCDate()+' '+V('mon')[d.getUTCMonth()];}
+  function fmtH(h){let H=Math.floor(h),M=Math.round((h-H)*60);if(M===60){H++;M=0;}return LANG==='ru'?H+' ч'+(M?' '+M+' мин':''):H+'h'+(M?String(M).padStart(2,'0'):'');}
+  function signed(x,dp){return (x>=0?'+':'−')+nf(Math.abs(x).toFixed(dp));}
+  function fmtSet(s){return nf(s.kg)+' × '+s.reps+' @'+nf(s.rpe);}
+  function testE1(s){const t=s&&s.data&&s.data.test;if(!t||!isNum(t.kg)||t.kg<=0||!isNum(t.reps)||!isNum(t.rpe))return null;return e1rm(t.kg,t.reps,t.rpe);}
+  function hasStop(f){return !!(f&&(f.vision||f.leg||f.chest||f.asthma||f.headache));}
+  function anyFlag(f){return !!(f&&(f.pec||hasStop(f)));}
+  function maxNum(a){let m=null;a.forEach(v=>{if(isNum(v)&&(m===null||v>m))m=v;});return m;}
+  function allOk(a){return a.every(c=>c.ok);}
+  function backAvg(daily,end,days){let s=0,c=0;for(let d=end-days+1;d<=end;d++){const e=daily[ds(d)];if(e&&isNum(e.back)){s+=e.back;c++;}}return {avg:c?s/c:null,n:c};}
+  function lastTwo(list,pred){const last=list.slice(-2);const n=last.filter(pred).length;return {ok:last.length===2&&n===2,val:n+'/2'};}
+
+  function criteria(type,L,d,ctx){
+    const items=[],lvl=L.level,goal=lvl===6,list=L.list;
+    if(!goal){const days=d-L.since;items.push({label:tr('c.minDays'),ok:days>=CFG.minDays,val:tr('v.days',{n:Math.max(0,Math.min(days,CFG.minDays)),of:CFG.minDays})});}
+    if(type==='muscu'){const ok=d>ctx.pecUntil;items.push({label:tr('c.noPec'),ok:ok,val:ok?'':tr('v.resumes',{s:fmtShort(ctx.pecUntil+1)})});}
+    const sok=d>ctx.stopUntil;
+    items.push({label:tr('c.noStop'),ok:sok,val:sok?'':tr('v.resumes',{s:fmtShort(ctx.stopUntil+1)})});
+    if(type==='muscu'){
+      if(lvl===1){
+        const base=list.find(s=>testE1(s)!==null&&dn(s.date)-L.since>=14);
+        items.push({label:tr('c.baseline'),ok:!!base,val:base?fmtSet(base.data.test):''});
+        const b=backAvg(ctx.daily,d,7);
+        items.push({label:tr('c.back3'),ok:b.n>=3&&b.avg<=3,val:b.n?nf(r1(b.avg))+'/10':tr('v.logDaily')});
+        items.push({label:tr('c.noPecP1'),ok:!list.some(s=>s.flags&&s.flags.pec),val:''});
+      }else{
+        const thr=goal?CFG.goal:CFG.thr[lvl],maxR=goal?9:8;let best=null;
+        list.forEach(s=>{const e=testE1(s);if(e!==null&&s.data.test.rpe<=maxR&&(best===null||e>best))best=e;});
+        items.push({label:tr('c.bench',{thr:thr,r:maxR}),ok:best!==null&&best>=thr,val:best!==null?tr('v.best',{x:nf(r1(best))}):tr('v.noSet')});
+        if(lvl===3){const b=backAvg(ctx.daily,d,14);items.push({label:tr('c.back2'),ok:b.n>=5&&b.avg<=2,val:b.n?nf(r1(b.avg))+'/10':tr('v.logDaily')});}
+      }
+    }else if(type==='cardio'){
+      if(lvl<=3){const r=lastTwo(list,s=>s.data.full&&s.data.talk);items.push({label:tr('c.talk2'),ok:r.ok,val:r.val});}
+      else if(lvl<=5){const r=lastTwo(list,s=>s.data.full&&s.data.recov);items.push({label:tr('c.recov2'),ok:r.ok,val:r.val});}
+      else{
+        const s=list[list.length-1],b=s&&s.data.blocks;let ok=false,val=tr('v.logBlocks');
+        if(Array.isArray(b)&&b.length===4&&b.every(x=>isNum(x)&&x>0)){const mx=Math.max.apply(null,b),mn=Math.min.apply(null,b),sp=(mx-mn)/mx;ok=sp<=0.05+1e-9;val=tr('v.spread',{x:nf((sp*100).toFixed(1))});}
+        items.push({label:tr('c.blocks'),ok:ok,val:val});
+      }
+    }else{
+      if(lvl<=2){const r=lastTwo(list,s=>s.data.rpe7);items.push({label:tr('c.rpe7'),ok:r.ok,val:r.val});}
+      else if(lvl===3){const r=lastTwo(list,s=>s.data.emom);items.push({label:tr('c.emom'),ok:r.ok,val:r.val});}
+      else if(lvl===4){
+        const first=list.find(s=>isNum(s.data.rounds)&&s.data.rounds>0);let best=null;
+        if(first)list.forEach(s=>{if(s!==first&&isNum(s.data.rounds)&&(best===null||s.data.rounds>best))best=s.data.rounds;});
+        items.push({label:tr('c.amrap'),ok:!!first&&best!==null&&best>=first.data.rounds+1,val:first?(first.data.rounds+' → '+(best!==null?best:'…')):tr('v.logRounds')});
+      }
+      else if(lvl===5){const r=lastTwo(list,s=>s.data.held);items.push({label:tr('c.held5'),ok:r.ok,val:r.val});}
+      else{const s=list[list.length-1];items.push({label:tr('c.pace6'),ok:!!(s&&s.data.pace6),val:''});}
+    }
+    return {items:items,goal:goal,ok:allOk(items)};
+  }
+
+  function weekMetrics(mon,daily,sessions){
+    const sun=mon+6;let logged=0,sl=0,sln=0,m3=0,m4=0,wh=0,bk=0,bkn=0,w=0,wn=0;
+    for(let d=mon;d<=sun;d++){
+      const e=daily[ds(d)];if(!e)continue;let any=false;
+      if(isNum(e.sleep)){sl+=e.sleep;sln++;any=true;}
+      if(isNum(e.meals)){if(e.meals>=3)m3++;if(e.meals>=4)m4++;any=true;}
+      if(e.whisky===true){wh++;any=true;}else if(e.whisky===false){any=true;}
+      if(isNum(e.back)){bk+=e.back;bkn++;any=true;}
+      if(isNum(e.weight)){w+=e.weight;wn++;any=true;}
+      if(any)logged++;
+    }
+    const ss=sessions.filter(s=>{const d=dn(s.date);return d>=mon&&d<=sun;});
+    let bench=null;ss.forEach(s=>{if(s.type==='muscu'){const e=testE1(s);if(e!==null&&(bench===null||e>bench))bench=e;}});
+    return {mon:mon,sun:sun,logged:logged,sleep:sln?sl/sln:null,m3:m3,m4:m4,whisky:wh,back:bkn?bk/bkn:null,weight:wn?w/wn:null,sessions:ss.length,flag:ss.some(s=>anyFlag(s.flags)),bench:bench};
+  }
+
+  function weekChecks(L,wk){
+    const T=WT[L],c=[],p=wk.prevW;
+    c.push({label:tr('w.logged',{n:CFG.minLogged}),ok:wk.logged>=CFG.minLogged,val:wk.logged+'/7'});
+    c.push({label:tr('w.sessions'),ok:wk.sessions>=wk.target,val:wk.sessions+'/'+wk.target});
+    c.push({label:tr('w.sleep',{h:fmtH(T.sleep)}),ok:wk.sleep!==null&&wk.sleep>=T.sleep-1e-9,val:wk.sleep!==null?fmtH(wk.sleep):tr('v.noData')});
+    c.push({label:tr('w.meals',{mn:T.mn,md:T.md}),ok:wk[T.mk]>=T.md,val:tr('v.ndays',{n:wk[T.mk]})});
+    c.push({label:tr('w.whisky',{n:T.wh}),ok:wk.whisky<=T.wh,val:tr('v.evenings',{n:wk.whisky})});
+    const wok=wk.weight!==null&&(!isNum(p)||wk.weight>=p+T.tol-1e-9);
+    c.push({label:tr(L===4?'w.weightStable':'w.weightNotDown'),ok:wok,val:wk.weight!==null?(nf(r1(wk.weight))+' '+tr('u.kg')+(isNum(p)?' ('+signed(wk.weight-p,1)+')':'')):tr('v.noData')});
+    c.push({label:tr('w.noStop'),ok:!wk.flag,val:''});
+    return c;
+  }
+
+  function slope(ys){const n=ys.length,mx=(n-1)/2,my=ys.reduce((a,b)=>a+b,0)/n;let num=0,den=0;for(let i=0;i<n;i++){num+=(i-mx)*(ys[i]-my);den+=(i-mx)*(i-mx);}return den?num/den:0;}
+
+  function windowChecks(T,win){
+    const out=[];
+    if(T>=5){const ws=win.map(w=>w.weight);let ok=false,val=tr('x.needWeeks');
+      if(ws.length>=2&&ws.every(isNum)){const s=slope(ws);ok=s>=0.25-1e-9&&s<=0.5+1e-9;val=signed(s,2)+' '+tr('u.kgWeek');}
+      out.push({label:tr('x.gain'),ok:ok,val:val});}
+    if(T===6){const h=Math.floor(win.length/2);const a=maxNum(win.slice(0,h).map(w=>w.bench)),b=maxNum(win.slice(h).map(w=>w.bench));
+      out.push({label:tr('x.bench'),ok:a!==null&&b!==null&&b>=a*0.98,val:(b!==null?nf(r1(b)):'–')+' vs '+(a!==null?nf(r1(a)):'–')});}
+    return out;
+  }
+
+  function compute(st,todayS){
+    const today=dn(todayS),start=dn(st.profile.startDate),daily=st.daily||{};
+    const sessions=(st.sessions||[]).filter(s=>{const d=dn(s.date);return d>=start&&d<=today&&TYPES.indexOf(s.type)>=0;})
+      .sort((a,b)=>dn(a.date)-dn(b.date)||(a.t||0)-(b.t||0));
+    const L={};TYPES.forEach(ty=>{L[ty]={level:1,since:start,list:[],goal:false,goalDate:null};});
+    const ctx={pecUntil:-1e9,stopUntil:-1e9,daily:daily},events=[],freq={level:3,since:start},weeks=[],levelOf=new Map(),byDay=new Map();
+    sessions.forEach(s=>{const d=dn(s.date);if(!byDay.has(d))byDay.set(d,[]);byDay.get(d).push(s);});
+    let lastW=null;
+    for(let d=start;d<=today;d++){
+      (byDay.get(d)||[]).forEach(s=>{
+        const Lt=L[s.type];levelOf.set(s.id,Lt.level);Lt.list.push(s);
+        if(s.flags&&s.flags.pec)ctx.pecUntil=Math.max(ctx.pecUntil,d+CFG.pauseDays);
+        if(hasStop(s.flags))ctx.stopUntil=Math.max(ctx.stopUntil,d+CFG.pauseDays);
+        const c=criteria(s.type,Lt,d,ctx);
+        if(c.ok){
+          if(Lt.level<6){events.push({d:d,kind:'up',type:s.type,from:Lt.level,to:Lt.level+1});Lt.level++;Lt.since=d;Lt.list=[];}
+          else if(!Lt.goal){Lt.goal=true;Lt.goalDate=d;events.push({d:d,kind:'goal',type:s.type});}
+        }
+      });
+      if(wday(d)===6&&d<today&&d-6>=start){
+        const wk=weekMetrics(d-6,daily,sessions);wk.target=freq.level;wk.prevW=lastW;if(wk.weight!==null)lastW=wk.weight;
+        weeks.push(wk);
+        const since=weeks.filter(w=>w.mon>=freq.since);
+        wk.pass=freq.level>3?allOk(weekChecks(freq.level,wk)):null;
+        let moved=false;
+        if(freq.level<6){
+          const T=freq.level+1,need=FREQ_NEED[T];
+          if(since.length>=need){const win=since.slice(-need);
+            if(win.every(w=>allOk(weekChecks(T,w)))&&allOk(windowChecks(T,win))){events.push({d:d,kind:'freq-up',from:freq.level,to:T});freq.level=T;freq.since=d+1;moved=true;}}
+        }
+        if(!moved&&freq.level>3){const l2=since.slice(-2);
+          if(l2.length===2&&l2.every(w=>!allOk(weekChecks(freq.level,w)))){events.push({d:d,kind:'freq-down',from:freq.level,to:freq.level-1});freq.level--;freq.since=d+1;}}
+      }
+    }
+    const cur=weekMetrics(wkStart(today),daily,sessions);cur.target=freq.level;cur.prevW=lastW;
+    const last=sessions[sessions.length-1];
+    const nextType=last?TYPES[(TYPES.indexOf(last.type)+1)%3]:'muscu';
+    return {today:today,start:start,L:L,freq:freq,weeks:weeks,events:events,cur:cur,ctx:ctx,nextType:nextType,levelOf:levelOf,sessions:sessions};
+  }
+
+  function freqView(C){
+    const lvl=C.freq.level;if(lvl>=6)return null;
+    const T=lvl+1,need=FREQ_NEED[T],since=C.weeks.filter(w=>w.mon>=C.freq.since);
+    let streak=0;for(let i=since.length-1;i>=0&&streak<need;i--){if(allOk(weekChecks(T,since[i])))streak++;else break;}
+    const curChecks=weekChecks(T,Object.assign({},C.cur,{target:lvl}));
+    const win=since.slice(-need);
+    return {T:T,need:need,streak:streak,curChecks:curChecks,winChecks:T>=5?windowChecks(T,win):[]};
+  }
+
+  function freshState(t){return {v:1,profile:{startDate:t,startWeight:81,startWaist:81,height:175},daily:{},sessions:[],meta:{lastBackup:null,created:t}};}
+
+  function generateDemo(todayS){
+    const today=dn(todayS),start=today-45,st=freshState(ds(start));
+    let seed=11;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646;};
+    for(let d=start;d<today;d++){const i=d-start,wk=Math.floor(i/7);
+      st.daily[ds(d)]={sleep:Math.round((5.45+wk*0.1+rnd()*0.5)*4)/4,meals:(rnd()<0.88?3:2)+(wk>=3&&rnd()<0.55?1:0),whisky:rnd()<(wk<2?0.55:0.38),
+        back:Math.max(0,Math.min(10,Math.round(3.1-wk*0.3+(rnd()-0.5)*1.2))),weight:Math.round((81+i*0.035+(rnd()-0.5)*0.5)*10)/10};}
+    const bench=[[15,105,5,8],[23,107.5,5,8],[29,110,5,8],[36,112.5,5,8],[42,115,5,8]];let k=0;
+    for(let d=start;d<today;d++){const i=d-start,w=wday(d);if(!(w===0||w===2||w===4||(w===5&&i>=30)))continue;
+      const type=TYPES[k%3];k++;const s={id:'demo'+i,t:i,date:ds(d),type:type,data:{},flags:{}};
+      if(type==='muscu'){let b=null;bench.forEach(x=>{if(x[0]<=i)b=x;});if(b)s.data.test={kg:b[1],reps:b[2],rpe:b[3]};}
+      else if(type==='cardio'){s.data.full=true;s.data.talk=true;s.data.recov=true;}
+      else{s.data.rpe7=true;s.data.emom=true;}
+      st.sessions.push(s);}
+    st.meta.lastBackup=ds(today-2);
+    return st;
+  }
+
+  return {CFG:CFG,TYPES:TYPES,FREQ_NEED:FREQ_NEED,WT:WT,STR:STR,D:D,V:V,tr:tr,setLang:setLang,getLang:getLang,withLang:withLang,nf:nf,plRu:plRu,scramble:scramble,pct:pct,e1rm:e1rm,dn:dn,ds:ds,wday:wday,wkStart:wkStart,isNum:isNum,r1:r1,fmtDay:fmtDay,fmtShort:fmtShort,fmtH:fmtH,signed:signed,fmtSet:fmtSet,testE1:testE1,hasStop:hasStop,anyFlag:anyFlag,allOk:allOk,criteria:criteria,weekMetrics:weekMetrics,weekChecks:weekChecks,windowChecks:windowChecks,compute:compute,freqView:freqView,freshState:freshState,generateDemo:generateDemo};
+})();
+/*ENGINE-END*/
+
+const E=ENGINE;
+const {CFG,TYPES,dn,isNum,r1,nf,fmtDay,fmtShort,fmtH,signed,fmtSet,testE1,anyFlag,allOk,criteria,compute,freqView,freshState,generateDemo}=E;
+const tr=E.tr,V=E.V;
+const nm=x=>V('names')[x];
+const lvls=x=>V('levels')[x];
+const KEY='yns1-comeback-v1',UIKEY='yns1-comeback-tab',LANGKEY='yns1-comeback-lang';
+const TABS=['today','progress','plan','data'];
+const FLAG_KEYS=['pec','vision','leg','chest','asthma','headache'];
+/* On iPhone, every browser is WebKit: storage inside an embedded frame (like the claude.ai viewer) is wiped when the browser closes. */
+const IS_TOP=(()=>{try{return window.top===window.self;}catch(e){return false;}})();
+const IS_IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const IS_STANDALONE=window.navigator.standalone===true||(!!window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+const NEW_URL='';
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+function todayStr(){const t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate());}
+function num(v){if(v==null)return null;const s=String(v).trim().replace(',','.');if(!s)return null;const x=Number(s);return isFinite(x)?x:null;}
+function newId(){return 's'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function valid(s){return !!(s&&s.profile&&/^\d{4}-\d{2}-\d{2}$/.test(s.profile.startDate||'')&&s.daily&&typeof s.daily==='object'&&!Array.isArray(s.daily)&&Array.isArray(s.sessions));}
+
+let storageOk=(function(){try{localStorage.setItem(KEY+':probe','1');localStorage.removeItem(KEY+':probe');return true;}catch(e){return false;}})();
+function loadState(){try{const raw=localStorage.getItem(KEY);if(!raw)return null;const s=JSON.parse(raw);return valid(s)?s:null;}catch(e){return null;}}
+let S=loadState()||freshState(todayStr());
+if(!S.meta)S.meta={lastBackup:null};
+let REAL=null,demo=false,C=null,renderedDay=null;
+const ui={logOpen:false,logType:null,logDate:null,ciDate:null,flash:null};
+let persistAsked=false;
+function persist(){if(demo)return;try{localStorage.setItem(KEY,JSON.stringify(S));storageOk=true;
+  if(!persistAsked&&IS_TOP&&navigator.storage&&navigator.storage.persist){persistAsked=true;navigator.storage.persist().catch(()=>{});}}catch(e){storageOk=false;}}
+persist();
+(function(){let l='ru';try{const s=localStorage.getItem(LANGKEY);if(s==='en'||s==='ru')l=s;}catch(e){}E.setLang(l);})();
+
+function segBtn(v,on,label){return '<button type="button" data-v="'+esc(v)+'" aria-pressed="'+(on?'true':'false')+'">'+esc(label==null?v:label)+'</button>';}
+function segVal(name){const b=document.querySelector('[data-seg="'+name+'"] [aria-pressed="true"]');return b?b.dataset.v:null;}
+function chk(id){const el=document.getElementById(id);return !!(el&&el.checked);}
+function check(id,label){return '<label class="check" for="'+id+'"><input type="checkbox" id="'+id+'"><span>'+esc(label)+'</span></label>';}
+function plates(n,cur,goal,label){let h='';for(let i=1;i<=n;i++)h+='<span class="'+(goal||i<cur?'done':i===cur?'cur':'')+'"></span>';return '<div class="plates" role="img" aria-label="'+esc(label||tr('p.levelOf',{c:cur,n:n}))+'">'+h+'</div>';}
+function judge(title,cr,yes,no){
+  const met=cr.items.filter(i=>i.ok).length;
+  return '<div class="judge"><div class="judge-head"><span class="judge-title">'+esc(title)+'</span><span class="judge-count">'+met+'/'+cr.items.length+'</span></div>'+
+    '<ul class="lamps">'+cr.items.map(i=>'<li class="lamp '+(i.ok?'on':'off')+'"><span class="bulb" aria-hidden="true"></span><span class="lamp-label">'+esc(i.label)+'<span class="sr">'+esc(tr(i.ok?'p.done':'p.notYet'))+'</span></span><span class="lamp-val">'+esc(i.val||'')+'</span></li>').join('')+'</ul>'+
+    '<div class="verdict '+(cr.ok?'yes':'no')+'"><span class="three" aria-hidden="true"><i></i><i></i><i></i></span><span>'+esc(cr.ok?yes:no)+'</span></div></div>';
+}
+function flagNames(f){const fl=V('flags');return FLAG_KEYS.filter(k=>f&&f[k]).map(k=>fl[k].toLowerCase());}
+function eventText(ev){
+  if(ev.kind==='up')return tr('ev.up',{type:nm(ev.type),to:ev.to,name:lvls(ev.type)[ev.to-1].name});
+  if(ev.kind==='goal')return tr('ev.goal',{type:nm(ev.type)});
+  if(ev.kind==='freq-up')return tr('ev.freqUp',{n:ev.to});
+  return tr('ev.freqDown',{n:ev.to});
+}
+function evKey(ev){return [ev.kind,ev.type||'',ev.from||'',ev.to||'',ev.d].join('|');}
+function riskText(lvl,strong){const a=tr('fq.risk1',{l:lvl}),b=tr('fq.risk2',{m:lvl-1});return (strong?'<strong>'+esc(a)+'</strong>':esc(a))+' '+esc(b);}
+function detail(s){
+  const d=s.data||{};
+  if(s.type==='muscu'){const e=testE1(s);return e!==null?fmtSet(d.test)+' · e1RM '+nf(r1(e)):tr('d.noTest');}
+  if(s.type==='cardio'){const p=[tr(d.full?'d.full':'d.cut')];if(d.talk)p.push(tr('d.talk'));if(d.recov)p.push(tr('d.recov'));if(Array.isArray(d.blocks))p.push(tr('d.blocks',{b:d.blocks.map(x=>nf(x)).join(' / ')}));return p.join(' · ');}
+  const p=[];if(d.rpe7)p.push(tr('d.rpe7'));if(d.emom)p.push(tr('d.emom'));if(isNum(d.rounds))p.push(tr('d.rounds',{n:d.rounds}));if(d.held)p.push(tr('d.held'));if(d.pace6)p.push(tr('d.pace6'));
+  return p.join(' · ')||tr('d.logged');
+}
+
+function render(){C=compute(S,todayStr());renderedDay=todayStr();renderChrome();renderStatus();renderToday();renderProgress();renderPlan();renderData();}
+function renderChrome(){
+  const L=E.getLang(),tabs=V('tabs');
+  document.documentElement.lang=L;
+  $('#brand-title').textContent=tr('brand');$('#handle').textContent=tr('handle');
+  document.querySelectorAll('.tabbar [data-tab]').forEach(b=>{b.textContent=tabs[b.dataset.tab];});
+  document.querySelectorAll('main .tab').forEach(s=>s.setAttribute('aria-label',tabs[s.id]));
+  $('.tabbar').setAttribute('aria-label',tr('navLabel'));
+  $('#lang').setAttribute('aria-label',tr('langLabel'));
+  document.querySelectorAll('#lang [data-lang]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===L?'true':'false'));
+  $('#t-note').innerHTML='<span class="eyebrow">'+esc(tr('noteEyebrow'))+'</span><p>'+esc(tr('note'))+'</p>';
+}
+function renderStatus(){
+  if(C.today<C.start){$('#status').innerHTML=tr('st.starts',{d:esc(fmtShort(C.start))});return;}
+  $('#status').innerHTML=tr('st.day',{n:C.today-C.start+1,s:C.cur.sessions,f:C.freq.level});
+}
+function renderToday(){renderAlerts();renderNext();renderCheckin();}
+
+function renderAlerts(){
+  const a=[],td=C.today;
+  if(demo)a.push('<div class="alert info"><p>'+tr('a.demo')+' <button type="button" class="link" data-act="exit-demo">'+esc(tr('a.exitDemo'))+'</button></p></div>');
+  if(!storageOk)a.push('<div class="alert stop"><p>'+tr('a.storage')+'</p></div>');
+  if(!demo&&!IS_TOP&&NEW_URL)a.push('<div class="alert warn"><p>'+tr('a.moved')+' <a href="'+esc(NEW_URL)+'" target="_blank" rel="noopener">'+esc(NEW_URL)+'</a></p></div>');
+  else if(!demo&&!IS_TOP&&IS_IOS)a.push('<div class="alert warn"><p>'+tr('a.frameIOS')+'</p></div>');
+  if(!demo&&IS_TOP&&IS_IOS&&!IS_STANDALONE)a.push('<div class="alert info"><p>'+tr('a.install')+'</p></div>');
+  if(ui.flash)a.push('<div class="alert warn"><p><strong>'+esc(ui.flash)+'</strong> <button type="button" class="link" data-act="dismiss">'+esc(tr('a.ok'))+'</button></p></div>');
+  C.events.filter(ev=>td-ev.d<=3).slice(-3).reverse().forEach(ev=>{
+    a.push('<div class="alert win"><span class="three" aria-hidden="true"><i></i><i></i><i></i></span><div><strong>'+esc(eventText(ev))+'</strong><br><span class="small">'+esc(fmtDay(ev.d))+'</span></div></div>');
+  });
+  if(C.ctx.stopUntil>=td)a.push('<div class="alert stop"><p>'+tr('a.stop',{d:esc(fmtDay(C.ctx.stopUntil+1)),s:esc(fmtShort(C.ctx.stopUntil+1))})+'</p></div>');
+  if(C.ctx.pecUntil>=td)a.push('<div class="alert stop"><p>'+tr('a.pec',{d:esc(fmtDay(C.ctx.pecUntil+1)),s:esc(fmtShort(C.ctx.pecUntil+1))})+'</p></div>');
+  TYPES.forEach(ty=>{const L=C.L[ty];if(!L.goal&&td-L.since>=CFG.stuck)a.push('<div class="alert warn"><p>'+tr('a.stuck',{type:esc(nm(ty)),l:L.level})+'</p></div>');});
+  const lvl=C.freq.level,since=C.weeks.filter(w=>w.mon>=C.freq.since),lw=since[since.length-1];
+  if(lvl>3&&lw&&lw.pass===false)a.push('<div class="alert warn"><p>'+riskText(lvl,true)+'</p></div>');
+  const n=Object.keys(S.daily).length+S.sessions.length,lb=S.meta.lastBackup;
+  if(!demo&&n>=5&&(!lb||td-dn(lb)>=7))a.push('<div class="alert info"><p>'+tr('a.backup')+' <button type="button" class="link" data-act="goto" data-to="data">'+esc(tr('a.backupBtn'))+'</button></p></div>');
+  if(!demo&&n===0)a.push('<div class="alert info"><p><strong>'+esc(tr('a.startTitle'))+'</strong></p><ol><li>'+esc(tr('a.start1'))+'</li><li>'+esc(tr('a.start2'))+'</li><li>'+esc(tr('a.start3'))+'</li></ol></div>');
+  $('#t-alerts').innerHTML=a.join('');
+}
+
+function renderNext(){
+  const type=ui.logType||C.nextType,L=C.L[type],lvl=L.level,def=lvls(type)[lvl-1],name=nm(type);
+  const other=ui.logType&&ui.logType!==C.nextType;
+  $('#t-next').innerHTML='<article class="card next">'+
+    '<div class="row between"><span class="eyebrow">'+esc(tr(other?'n.instead':'n.next'))+'</span><span class="chip">P'+lvl+' · '+esc(def.name)+'</span></div>'+
+    '<div class="next-type'+(name.length>9?' long':'')+'">'+esc(name)+'</div>'+
+    '<ul class="ex">'+def.items.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
+    '<p class="cue">'+esc(V('cues')[type])+'</p>'+
+    '<p class="unlock"><span class="eyebrow">'+esc(tr('n.unlock'))+'</span>'+esc(def.unlock)+'</p>'+
+    '<button type="button" class="btn" data-act="toggle-log" aria-expanded="'+(ui.logOpen?'true':'false')+'">'+esc(tr(ui.logOpen?'n.close':'n.log'))+'</button>'+
+    (ui.logOpen?logForm(type,lvl):'')+
+  '</article>';
+}
+
+function logForm(type,lvl){
+  const td=todayStr();
+  let h='<form class="form" id="log-form" novalidate>'+
+    '<div class="grid2"><div class="field"><label for="lg-date">'+esc(tr('f.date'))+'</label><input class="input" type="date" id="lg-date" value="'+esc(ui.logDate||td)+'" max="'+td+'" min="'+esc(S.profile.startDate)+'"></div>'+
+    '<div class="field"><label for="lg-type">'+esc(tr('f.session'))+'</label><select class="input" id="lg-type">'+TYPES.map(x=>'<option value="'+x+'"'+(x===type?' selected':'')+'>'+esc(nm(x))+' · P'+C.L[x].level+'</option>').join('')+'</select></div></div>';
+  if(type==='muscu'){
+    h+='<fieldset class="group"><legend>'+esc(tr('f.benchLegend'))+'</legend><p class="hint">'+esc(lvls('muscu')[lvl-1].test)+'</p><div class="grid3">'+
+      '<div class="field"><label for="lg-kg">'+esc(tr('f.kg'))+'</label><input class="input" id="lg-kg" inputmode="decimal" autocomplete="off"></div>'+
+      '<div class="field"><label for="lg-reps">'+esc(tr('f.reps'))+'</label><select class="input" id="lg-reps"><option value=""></option>'+[1,2,3,4,5,6,7,8,9,10].map(r=>'<option value="'+r+'">'+r+'</option>').join('')+'</select></div>'+
+      '<div class="field"><label for="lg-rpe">'+esc(tr('f.rpe'))+'</label><select class="input" id="lg-rpe"><option value=""></option>'+[6,6.5,7,7.5,8,8.5,9,9.5,10].map(r=>'<option value="'+r+'">'+esc(nf(r))+'</option>').join('')+'</select></div></div>'+
+      '<p class="hint">'+esc(tr('f.rpeHint'))+'</p></fieldset>';
+  }
+  if(type==='cardio'){
+    h+=check('lg-full',tr('f.full'));
+    if(lvl<=3)h+=check('lg-talk',tr('f.talk'));
+    else if(lvl<=5)h+=check('lg-recov',tr('f.recov'));
+    else h+='<fieldset class="group"><legend>'+esc(tr('f.blocksLegend'))+'</legend><p class="hint">'+esc(tr('f.blocksHint'))+'</p><div class="grid4">'+[1,2,3,4].map(i=>'<div class="field"><label for="lg-b'+i+'">'+esc(tr('f.block',{i:i}))+'</label><input class="input" id="lg-b'+i+'" inputmode="decimal" autocomplete="off"></div>').join('')+'</div></fieldset>';
+  }
+  if(type==='cross'){
+    if(lvl<=2)h+=check('lg-rpe7',tr('f.rpe7'));
+    else if(lvl===3)h+=check('lg-emom',tr('f.emom'));
+    else if(lvl===4)h+='<div class="field"><label for="lg-rounds">'+esc(tr('f.rounds'))+'</label><input class="input" id="lg-rounds" inputmode="numeric" autocomplete="off"></div>';
+    else if(lvl===5)h+=check('lg-held',tr('f.held'));
+    else h+=check('lg-pace6',tr('f.pace6'));
+  }
+  const fl=V('flags');
+  h+='<fieldset class="group flags"><legend>'+esc(tr('f.stopLegend'))+'</legend><p class="hint">'+esc(tr('f.stopHint'))+'</p>'+FLAG_KEYS.map(k=>check('lg-f-'+k,fl[k])).join('')+'</fieldset>'+
+    '<button type="submit" class="btn">'+esc(tr('f.save'))+'</button></form>';
+  return h;
+}
+
+function renderCheckin(){
+  const td=todayStr(),date=ui.ciDate||td,e=S.daily[date]||{};
+  const v=x=>x==null?'':esc(nf(x));
+  $('#t-checkin').innerHTML='<form class="card" id="ci-form" novalidate>'+
+    '<div class="row between"><h2>'+esc(tr('ci.title'))+'</h2><input class="input date-sm" type="date" id="ci-date" value="'+esc(date)+'" max="'+td+'" aria-label="'+esc(tr('ci.dateLabel'))+'"></div>'+
+    '<p class="hint">'+esc(tr('ci.hint'))+'</p>'+
+    '<div class="grid2"><div class="field"><label for="ci-sleep">'+esc(tr('ci.sleep'))+'</label><input class="input" id="ci-sleep" inputmode="decimal" autocomplete="off" value="'+v(e.sleep)+'"></div>'+
+    '<div class="field"><label for="ci-weight">'+esc(tr('ci.weight'))+'</label><input class="input" id="ci-weight" inputmode="decimal" autocomplete="off" value="'+v(e.weight)+'"></div></div>'+
+    '<div class="field"><span class="lab" id="ci-meals-l">'+esc(tr('ci.meals'))+'</span><div class="seg" role="group" aria-labelledby="ci-meals-l" data-seg="meals">'+[0,1,2,3,4,5,6].map(n=>segBtn(n,e.meals===n)).join('')+'</div><p class="hint">'+esc(tr('ci.mealsHint'))+'</p></div>'+
+    '<div class="field"><span class="lab" id="ci-wh-l">'+esc(tr('ci.whisky'))+'</span><div class="seg" role="group" aria-labelledby="ci-wh-l" data-seg="whisky">'+segBtn('no',e.whisky===false,tr('ci.no'))+segBtn('yes',e.whisky===true,tr('ci.yes'))+'</div></div>'+
+    '<div class="field"><span class="lab" id="ci-back-l">'+esc(tr('ci.back'))+'</span><div class="seg" role="group" aria-labelledby="ci-back-l" data-seg="back">'+[0,1,2,3,4,5,6,7,8,9,10].map(n=>segBtn(n,e.back===n)).join('')+'</div></div>'+
+    '<details class="more"'+(e.waist!=null?' open':'')+'><summary>'+esc(tr('ci.waistSum'))+'</summary><div class="field"><label for="ci-waist">'+esc(tr('ci.waist'))+'</label><input class="input" id="ci-waist" inputmode="decimal" autocomplete="off" value="'+v(e.waist)+'"></div></details>'+
+    '<div class="row"><button type="submit" class="btn">'+esc(tr('ci.save'))+'</button>'+(S.daily[date]?'<button type="button" class="btn warn" data-act="clear-day">'+esc(tr('ci.clear'))+'</button>':'')+'</div>'+
+  '</form>';
+}
+
+function renderProgress(){
+  const cards=TYPES.map(ty=>{
+    const L=C.L[ty],lvl=L.level,def=lvls(ty)[lvl-1],days=C.today-L.since+1;
+    const head='<div class="row between"><h2>'+esc(nm(ty))+'</h2>'+plates(6,lvl,L.goal)+'</div><div class="row between small"><span><b class="mono">P'+lvl+'</b> '+esc(def.name)+'</span><span class="muted mono">'+esc(tr('p.dayAt',{n:Math.max(1,days),l:lvl}))+'</span></div>';
+    if(L.goal)return '<article class="card">'+head+'<div class="alert win"><span class="three" aria-hidden="true"><i></i><i></i><i></i></span><strong>'+esc(tr('p.goalOn',{d:fmtDay(L.goalDate),s:fmtShort(L.goalDate)}))+'</strong></div></article>';
+    const cr=criteria(ty,L,C.today,C.ctx);
+    const title=lvl<6?tr('p.toUnlock',{n:lvl+1,name:lvls(ty)[lvl].name}):tr('p.toGoal');
+    return '<article class="card">'+head+judge(title,cr,tr('p.yes',{type:nm(ty)}),tr('p.no'))+'</article>';
+  }).join('');
+  $('#progress').innerHTML='<div class="stack"><p class="lede">'+esc(tr('p.lede'))+'</p>'+cards+freqCard()+weeksTable()+historyList()+'</div>';
+}
+
+function freqCard(){
+  const lvl=C.freq.level,v=freqView(C),since=C.weeks.filter(w=>w.mon>=C.freq.since),lw=since[since.length-1];
+  const risk=lvl>3&&lw&&lw.pass===false;
+  let body;
+  if(!v)body='<p class="small">'+esc(tr('fq.top'))+'</p>';
+  else{
+    body='<p class="small">'+tr('fq.unlock',{T:v.T,need:v.need,s:v.streak})+'</p>'+
+      judge(tr('fq.thisWeek'),{items:v.curChecks,ok:allOk(v.curChecks)},tr('fq.thisYes'),tr('fq.thisNo'));
+    if(v.winChecks.length)body+=judge(tr('fq.across',{need:v.need}),{items:v.winChecks,ok:allOk(v.winChecks)},tr('fq.acrossYes'),tr('p.no'));
+  }
+  return '<article class="card"><div class="row between"><h2>'+esc(tr('fq.title'))+'</h2>'+plates(4,lvl-2,false,tr('fq.plates',{l:lvl}))+'</div>'+
+    '<div class="row between small"><span>'+tr('fq.perWeek',{l:lvl})+'</span><span class="muted mono">'+esc(tr('fq.weekNow',{s:C.cur.sessions,l:lvl}))+'</span></div>'+
+    (risk?'<div class="alert warn"><p>'+riskText(lvl,false)+'</p></div>':'')+body+'</article>';
+}
+
+function weeksTable(){
+  const rows=[Object.assign({},C.cur,{label:tr('wk.this'),partial:true})].concat(C.weeks.slice().reverse().map(w=>Object.assign({},w,{label:fmtShort(w.mon)})));
+  const f=x=>x!==null?nf(r1(x)):'–';
+  const body=rows.slice(0,14).map(w=>'<tr><td>'+esc(w.label)+'</td><td class="'+(!w.partial&&w.sessions<w.target?'bad':'')+'">'+w.sessions+'/'+w.target+'</td><td>'+(w.sleep!==null?esc(fmtH(w.sleep)):'–')+'</td><td>'+w.m3+'</td><td>'+w.m4+'</td><td>'+w.whisky+'</td><td>'+f(w.back)+'</td><td>'+f(w.weight)+'</td><td>'+f(w.bench)+'</td></tr>').join('');
+  return '<article class="card"><h2>'+esc(tr('wk.title'))+'</h2><div class="tablewrap"><table class="weeks"><thead><tr>'+V('wk.cols').map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table></div><p class="hint">'+esc(tr('wk.hint'))+'</p></article>';
+}
+
+function historyList(){
+  const items=C.sessions.map(s=>({d:dn(s.date),k:1,s:s})).concat(C.events.map(ev=>({d:ev.d,k:0,ev:ev})));
+  items.sort((a,b)=>b.d-a.d||a.k-b.k||((b.s&&b.s.t)||0)-((a.s&&a.s.t)||0));
+  if(!items.length)return '<article class="card"><h2>'+esc(tr('h.title'))+'</h2><p class="muted">'+esc(tr('h.empty'))+'</p></article>';
+  const li=items.slice(0,40).map(it=>{
+    if(it.k===0)return '<li class="ev"><span class="mono small">'+esc(fmtShort(it.d))+'</span><strong>'+esc(eventText(it.ev))+'</strong></li>';
+    const s=it.s,fl=flagNames(s.flags);
+    return '<li><span class="mono small">'+esc(fmtShort(it.d))+'</span><div class="li-body"><span><b>'+esc(nm(s.type))+' P'+(C.levelOf.get(s.id)||'?')+'</b> <span class="muted">'+esc(detail(s))+'</span></span>'+(fl.length?'<span class="flagtxt">'+esc(fl.join(', '))+'</span>':'')+'</div><button type="button" class="link danger" data-act="del" data-id="'+esc(s.id)+'">'+esc(tr('h.delete'))+'</button></li>';
+  }).join('');
+  return '<article class="card"><h2>'+esc(tr('h.title'))+'</h2><ul class="log">'+li+'</ul></article>';
+}
+
+function levelList(ty){
+  const L=C.L[ty],cur=L.level,tags=V('pl.tags');
+  return '<ol class="levels">'+lvls(ty).map((l,i)=>{
+    const n=i+1,locked=!L.goal&&n>cur+1;
+    const tag=L.goal||n<cur?'<span class="tag done">'+esc(tags.done)+'</span>':n===cur?'<span class="tag now">'+esc(tags.now)+'</span>':n===cur+1?'<span class="tag next">'+esc(tags.next)+'</span>':'<span class="tag locked">'+esc(tags.locked)+'</span>';
+    if(locked)return '<li class="locked"><div class="lv-head"><b class="mono">P'+n+'</b><span class="blurred" aria-hidden="true">'+esc(E.scramble(l.name))+'</span>'+tag+'</div>'+
+      '<div class="blurred" aria-hidden="true" inert><ul class="ex">'+l.items.map(x=>'<li>'+esc(E.scramble(x))+'</li>').join('')+'</ul><p class="small">'+esc(E.scramble(l.unlock))+'</p></div>'+
+      '<p class="hint">'+esc(tr('pl.lockedHint',{n:n-1}))+'</p></li>';
+    return '<li class="'+(n===cur&&!L.goal?'now':'')+'"><div class="lv-head"><b class="mono">P'+n+'</b>'+esc(l.name)+tag+'</div><ul class="ex">'+l.items.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul><p class="small"><span class="eyebrow">'+esc(tr('n.unlock'))+'</span> '+esc(l.unlock)+'</p></li>';
+  }).join('')+'</ol>';
+}
+
+function renderPlan(){
+  const li=a=>'<ul class="bullets">'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
+  const cues=V('cues');
+  $('#plan').innerHTML='<div class="stack">'+
+    '<aside class="note"><span class="eyebrow">'+esc(tr('noteEyebrow'))+'</span><p>'+esc(tr('note'))+'</p></aside>'+
+    '<article class="card"><h2>'+esc(tr('pl.how'))+'</h2>'+li(V('pl.howList'))+'</article>'+
+    '<article class="card"><h2>'+esc(tr('pl.safety'))+'</h2><p class="small">'+esc(tr('pl.safetyLead'))+'</p>'+li(V('pl.safetyList'))+'</article>'+
+    '<article class="card"><h2>'+esc(nm('muscu'))+'</h2><p class="small">'+esc(cues.muscu)+'</p>'+levelList('muscu')+'<p class="hint">'+esc(tr('pl.muscuHint'))+'</p></article>'+
+    '<article class="card"><h2>'+esc(nm('cardio'))+'</h2><p class="small">'+esc(cues.cardio)+'</p>'+levelList('cardio')+'</article>'+
+    '<article class="card"><h2>'+esc(nm('cross'))+'</h2><p class="small">'+esc(tr('pl.crossLead'))+'</p>'+levelList('cross')+'</article>'+
+    '<article class="card"><h2>'+esc(tr('fq.title'))+'</h2><div class="tablewrap"><table class="freq-table"><thead><tr>'+V('pl.freqCols').map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+
+      V('pl.freqRows').map(r=>'<tr><td class="mono">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>').join('')+
+    '</tbody></table></div><p class="hint">'+esc(tr('pl.freqHint'))+'</p></article>'+
+    '<article class="card"><h2>'+esc(tr('pl.recovery'))+'</h2>'+li(V('pl.recoveryList'))+'</article>'+
+  '</div>';
+}
+
+/* The summary always goes out in English so Arthur can read it. */
+function summaryEn(){
+  const L=C.L,lines=[],win=C.weeks.slice(-4);
+  lines.push('Comeback · '+fmtDay(C.today));
+  lines.push('Levels now: '+TYPES.map(ty=>nm(ty)+' P'+L[ty].level).join(' · ')+' · '+C.freq.level+' sessions/week');
+  if(!win.length){lines.push('No full week logged yet.');}
+  else{
+    const from=win[0].mon,to=win[win.length-1].sun;
+    let sl=0,sln=0,m3=0,mn=0,wh=0,bk=0,bkn=0,waist=null;
+    for(let d=from;d<=to;d++){
+      const e=S.daily[E.ds(d)];if(!e)continue;
+      if(isNum(e.sleep)){sl+=e.sleep;sln++;}
+      if(isNum(e.meals)){mn++;if(e.meals>=3)m3++;}
+      if(e.whisky===true)wh++;
+      if(isNum(e.back)){bk+=e.back;bkn++;}
+      if(isNum(e.waist))waist=e.waist;
+    }
+    const ses=win.reduce((a,w)=>a+w.sessions,0),tgt=win.reduce((a,w)=>a+w.target,0);
+    const ev=C.events.filter(e=>e.d>=from);
+    if(ev.length)lines.push('Level changes: '+ev.map(e=>eventText(e).replace(/: .*/,'')+' ('+fmtShort(e.d)+')').join(', '));
+    lines.push(win.length+' week'+(win.length>1?'s':'')+' from '+fmtShort(from)+': '+ses+'/'+tgt+' sessions · sleep '+(sln?fmtH(sl/sln):'–')+' · 3+ full meals '+m3+'/'+mn+' days · whisky '+wh+' evenings · back '+(bkn?r1(bk/bkn)+'/10':'–'));
+    const ws=win.filter(w=>w.weight!==null);
+    if(ws.length){const a=ws[0].weight,b=ws[ws.length-1].weight;
+      lines.push('Weight: '+(ws.length>1?r1(a)+' → '+r1(b)+' kg ('+signed(b-a,1)+')':r1(a)+' kg')+(waist!==null?' · waist '+waist+' cm':''));}
+    const tests=C.sessions.filter(s=>s.type==='muscu'&&dn(s.date)>=from&&testE1(s)!==null);
+    if(tests.length){const first=tests[0];let best=first;tests.forEach(s=>{if(testE1(s)>testE1(best))best=s;});
+      lines.push('Bench: '+fmtSet(first.data.test)+' (e1RM '+r1(testE1(first))+')'+(best!==first?' → best '+fmtSet(best.data.test)+' (e1RM '+r1(testE1(best))+')':''));}
+    const fl=C.sessions.filter(s=>dn(s.date)>=from&&anyFlag(s.flags));
+    lines.push('Stop signals: '+(fl.length?fl.map(s=>fmtShort(dn(s.date))+' '+flagNames(s.flags).join(', ')).join('; '):'none'));
+  }
+  TYPES.forEach(ty=>{const Lt=L[ty];if(Lt.goal){lines.push(nm(ty)+': goal reached');return;}
+    const miss=criteria(ty,Lt,C.today,C.ctx).items.filter(i=>!i.ok).map(i=>i.label);
+    lines.push(nm(ty)+' next: '+(miss.length?miss[0]:'ready, unlocks next session'));});
+  return lines.join('\n');
+}
+function summaryText(){return E.withLang('en',summaryEn);}
+
+function renderData(){
+  const p=S.profile,lb=S.meta.lastBackup,pv=x=>x==null?'':esc(nf(x));
+  $('#data').innerHTML='<div class="stack">'+
+    '<article class="card"><h2>'+esc(tr('dt.sumTitle'))+'</h2><p class="hint">'+esc(tr('dt.sumHint'))+'</p><textarea class="input" id="sum-text" rows="9">'+esc(summaryText())+'</textarea><div class="row"><button type="button" class="btn" data-act="copy-sum">'+esc(tr('dt.copySum'))+'</button></div></article>'+
+    '<article class="card"><h2>'+esc(tr('dt.backupTitle'))+'</h2><p class="hint">'+esc(tr('dt.backupHint'))+'</p><p class="small">'+esc(tr('dt.last'))+' <b id="last-backup">'+esc(lb?fmtDay(dn(lb)):tr('dt.never'))+'</b></p><div class="row"><button type="button" class="btn" data-act="copy-backup">'+esc(tr('dt.copyBackup'))+'</button></div><textarea class="input" id="backup-text" rows="3" hidden></textarea>'+
+      '<div class="field"><label for="restore-text">'+esc(tr('dt.restoreLabel'))+'</label><textarea class="input" id="restore-text" rows="3" placeholder="'+esc(tr('dt.restorePh'))+'"></textarea></div><div class="row"><button type="button" class="btn warn" data-act="restore">'+esc(tr('dt.restore'))+'</button></div></article>'+
+    '<form class="card" id="setup-form" novalidate><h2>'+esc(tr('dt.startTitle'))+'</h2><p class="hint">'+esc(tr('dt.startHint'))+'</p>'+
+      '<div class="grid2"><div class="field"><label for="su-start">'+esc(tr('dt.startDate'))+'</label><input class="input" type="date" id="su-start" value="'+esc(p.startDate)+'" max="'+todayStr()+'"></div>'+
+      '<div class="field"><label for="su-weight">'+esc(tr('dt.startWeight'))+'</label><input class="input" id="su-weight" inputmode="decimal" value="'+pv(p.startWeight)+'"></div>'+
+      '<div class="field"><label for="su-waist">'+esc(tr('dt.startWaist'))+'</label><input class="input" id="su-waist" inputmode="decimal" value="'+pv(p.startWaist)+'"></div>'+
+      '<div class="field"><label for="su-height">'+esc(tr('dt.height'))+'</label><input class="input" id="su-height" inputmode="decimal" value="'+pv(p.height)+'"></div></div>'+
+      '<div class="row"><button type="submit" class="btn ghost">'+esc(tr('dt.save'))+'</button></div></form>'+
+    '<article class="card"><h2>'+esc(tr('dt.exTitle'))+'</h2><p class="hint">'+esc(tr('dt.exHint'))+'</p><div class="row"><button type="button" class="btn ghost" data-act="'+(demo?'exit-demo':'demo')+'">'+esc(tr(demo?'dt.exExit':'dt.exShow'))+'</button></div></article>'+
+    '<article class="card"><h2>'+esc(tr('dt.resetTitle'))+'</h2><p class="hint">'+esc(tr('dt.resetHint'))+'</p><div class="row"><button type="button" class="btn warn" data-act="reset">'+esc(tr('dt.resetBtn'))+'</button></div></article>'+
+  '</div>';
+}
+
+let toastTimer=null;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.hidden=true;},3400);}
+function arm(b,fn){
+  if(b.dataset.armed==='1'){fn();return;}
+  b.dataset.armed='1';b.dataset.orig=b.textContent;b.textContent=tr('tt.confirm');b.classList.add('armed');
+  setTimeout(()=>{if(b.isConnected&&b.dataset.armed==='1'){b.dataset.armed='';b.textContent=b.dataset.orig;b.classList.remove('armed');}},4000);
+}
+function copyText(text,ta,msg){
+  const fallback=()=>{if(ta){ta.hidden=false;ta.focus();ta.select();try{ta.setSelectionRange(0,text.length);}catch(e){}}toast(tr('tt.hold'));};
+  try{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(()=>toast(msg||tr('tt.copied')),fallback);else fallback();}catch(e){fallback();}
+}
+function showTab(id){
+  if(TABS.indexOf(id)<0)id='today';
+  document.querySelectorAll('main .tab').forEach(s=>{s.hidden=s.id!==id;});
+  document.querySelectorAll('.tabbar [data-tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===id?'page':'false'));
+  try{localStorage.setItem(UIKEY,id);}catch(e){}
+  window.scrollTo(0,0);
+}
+
+function saveLog(){
+  const td=todayStr(),date=$('#lg-date').value,type=$('#lg-type').value;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast(tr('tt.pickDate'));return;}
+  if(date>td){toast(tr('tt.future'));return;}
+  if(date<S.profile.startDate){toast(tr('tt.beforeStart'));return;}
+  const lvl=C.L[type].level,s={id:newId(),t:Date.now(),date:date,type:type,data:{},flags:{}};
+  if(type==='muscu'){
+    const kg=num($('#lg-kg').value),reps=num($('#lg-reps').value),rpe=num($('#lg-rpe').value);
+    if(kg!==null||reps!==null||rpe!==null){
+      if(kg===null||reps===null||rpe===null){toast(tr('tt.fillTest'));return;}
+      if(kg<20||kg>400){toast(tr('tt.checkKg'));return;}
+      s.data.test={kg:kg,reps:reps,rpe:rpe};
+    }
+  }else if(type==='cardio'){
+    s.data.full=chk('lg-full');
+    if(lvl<=3)s.data.talk=chk('lg-talk');
+    else if(lvl<=5)s.data.recov=chk('lg-recov');
+    else{const b=[1,2,3,4].map(i=>num($('#lg-b'+i).value));
+      if(b.some(x=>x!==null)){if(b.some(x=>x===null||x<=0)){toast(tr('tt.fillBlocks'));return;}s.data.blocks=b;}}
+  }else{
+    if(lvl<=2)s.data.rpe7=chk('lg-rpe7');
+    else if(lvl===3)s.data.emom=chk('lg-emom');
+    else if(lvl===4){const r=num($('#lg-rounds').value);if(r!==null){if(r<0||r>60||Math.floor(r)!==r){toast(tr('tt.rounds'));return;}s.data.rounds=r;}}
+    else if(lvl===5)s.data.held=chk('lg-held');
+    else s.data.pace6=chk('lg-pace6');
+  }
+  FLAG_KEYS.forEach(k=>{if(chk('lg-f-'+k))s.flags[k]=true;});
+  let warn=null;
+  if(s.data.test){
+    const prev=S.sessions.filter(x=>x.type==='muscu'&&x.data&&x.data.test&&x.data.test.reps===s.data.test.reps&&x.date<date).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)[0];
+    if(prev){const wks=Math.max(1,Math.floor((dn(date)-dn(prev.date))/7));if(s.data.test.kg-prev.data.test.kg>2.5*wks+1e-9)warn=tr('tt.warnFast',{s:fmtShort(dn(prev.date))});}
+    if(s.data.test.rpe>=9.5)warn=(warn?warn+' ':'')+tr('tt.never10');
+  }
+  const before=new Set(C.events.map(evKey));
+  S.sessions.push(s);persist();
+  ui.logOpen=false;ui.logType=null;ui.logDate=null;ui.flash=warn;
+  render();
+  const fresh=C.events.filter(ev=>!before.has(evKey(ev)));
+  if(anyFlag(s.flags))toast(tr('tt.savedStop'));
+  else if(fresh.length)toast(eventText(fresh[fresh.length-1]));
+  else toast(tr('tt.sessionSaved'));
+  window.scrollTo(0,0);
+}
+
+function saveCheckin(){
+  const td=todayStr(),date=$('#ci-date').value||td;
+  if(date>td){toast(tr('tt.future'));return;}
+  const e={},sleep=num($('#ci-sleep').value),weight=num($('#ci-weight').value),waist=num($('#ci-waist').value);
+  if(sleep!==null){if(sleep<0||sleep>16){toast(tr('tt.sleepRange'));return;}e.sleep=sleep;}
+  if(weight!==null){if(weight<40||weight>200){toast(tr('tt.checkWeight'));return;}e.weight=weight;}
+  if(waist!==null){if(waist<50||waist>160){toast(tr('tt.checkWaist'));return;}e.waist=waist;}
+  const meals=segVal('meals'),wh=segVal('whisky'),back=segVal('back');
+  if(meals!==null)e.meals=Number(meals);
+  if(wh!==null)e.whisky=wh==='yes';
+  if(back!==null)e.back=Number(back);
+  if(Object.keys(e).length)S.daily[date]=e;else delete S.daily[date];
+  persist();ui.ciDate=date===td?null:date;render();toast(tr('tt.ciSaved'));
+}
+
+function saveSetup(){
+  const d=$('#su-start').value;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){toast(tr('tt.pickStart'));return;}
+  if(d>todayStr()){toast(tr('tt.startFuture'));return;}
+  const w=num($('#su-weight').value),wa=num($('#su-waist').value),h=num($('#su-height').value);
+  S.profile.startDate=d;if(w!==null)S.profile.startWeight=w;if(wa!==null)S.profile.startWaist=wa;if(h!==null)S.profile.height=h;
+  persist();render();toast(tr('tt.saved'));
+}
+
+const H={
+  'toggle-log':()=>{ui.logOpen=!ui.logOpen;if(!ui.logOpen){ui.logType=null;ui.logDate=null;}renderNext();if(ui.logOpen){const f=$('#log-form');if(f)f.scrollIntoView({block:'nearest'});}},
+  'clear-day':b=>arm(b,()=>{delete S.daily[ui.ciDate||todayStr()];persist();render();toast(tr('tt.dayCleared'));}),
+  'del':b=>arm(b,()=>{S.sessions=S.sessions.filter(s=>s.id!==b.dataset.id);persist();render();toast(tr('tt.sessionDeleted'));}),
+  'copy-sum':()=>{const ta=$('#sum-text');copyText(ta.value,ta,tr('tt.sumCopied'));},
+  'copy-backup':()=>{const code=JSON.stringify(S),ta=$('#backup-text');ta.hidden=false;ta.value=code;copyText(code,ta,tr('tt.backupCopied'));
+    if(!demo){S.meta.lastBackup=todayStr();persist();const lb=$('#last-backup');if(lb)lb.textContent=fmtDay(dn(S.meta.lastBackup));renderAlerts();}},
+  'restore':b=>{let s=null;try{s=JSON.parse(($('#restore-text').value||'').trim());}catch(e){}
+    if(!valid(s)){toast(tr('tt.badBackup'));return;}
+    arm(b,()=>{if(!s.meta)s.meta={lastBackup:null};S=s;demo=false;REAL=null;persist();ui.logOpen=false;render();toast(tr('tt.restored'));});},
+  'demo':()=>{REAL=S;S=generateDemo(todayStr());demo=true;ui.logOpen=false;ui.flash=null;render();showTab('today');toast(tr('tt.exOn'));},
+  'exit-demo':()=>{if(REAL)S=REAL;REAL=null;demo=false;ui.logOpen=false;ui.flash=null;render();toast(tr('tt.exOff'));},
+  'reset':b=>arm(b,()=>{S=freshState(todayStr());demo=false;REAL=null;persist();ui.logOpen=false;ui.flash=null;render();toast(tr('tt.allDeleted'));}),
+  'goto':b=>showTab(b.dataset.to),
+  'dismiss':()=>{ui.flash=null;renderAlerts();},
+  'lang':b=>{const l=E.setLang(b.dataset.lang);try{localStorage.setItem(LANGKEY,l);}catch(e){}render();}
+};
+
+document.addEventListener('click',e=>{
+  const seg=e.target.closest('.seg button');
+  if(seg){const was=seg.getAttribute('aria-pressed')==='true';seg.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));if(!was)seg.setAttribute('aria-pressed','true');return;}
+  const tb=e.target.closest('[data-tab]');if(tb){showTab(tb.dataset.tab);return;}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const f=H[b.dataset.act];if(f){e.preventDefault();f(b);}
+});
+document.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(e.target.id==='log-form')saveLog();
+  else if(e.target.id==='ci-form')saveCheckin();
+  else if(e.target.id==='setup-form')saveSetup();
+});
+document.addEventListener('change',e=>{
+  const id=e.target.id;
+  if(id==='lg-type'){ui.logType=e.target.value;const d=$('#lg-date');ui.logDate=d?d.value:null;renderNext();}
+  else if(id==='lg-date')ui.logDate=e.target.value;
+  else if(id==='ci-date'){ui.ciDate=e.target.value||null;renderCheckin();}
+});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&renderedDay!==todayStr())render();});
+
+render();
+const hash=(location.hash||'').slice(1);
+let first='today';
+if(TABS.indexOf(hash)>=0)first=hash;else{try{const s=localStorage.getItem(UIKEY);if(TABS.indexOf(s)>=0)first=s;}catch(e){}}
+showTab(first);
+})();
+</script>
+
+</body></html>
