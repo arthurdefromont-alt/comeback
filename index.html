@@ -48,6 +48,8 @@ p{margin:0}
 .ex{list-style:none;margin:0;padding:0;display:grid;gap:7px}
 .ex li{display:grid;grid-template-columns:8px minmax(0,1fr);gap:10px;align-items:start}
 .ex li::before{content:"";width:8px;height:8px;margin-top:.5em;border-radius:2px;background:var(--ink)}
+.routine{display:grid;gap:4px;font-size:14.5px;padding:10px 12px;border-radius:10px;background:var(--sunken)}
+.routine .eyebrow{color:var(--ink)}
 .cue{font-size:14.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
 .unlock{font-size:14.5px}
 .unlock .eyebrow{margin-right:6px}
@@ -81,7 +83,6 @@ textarea.input{font-family:var(--f-data);font-size:13px;line-height:1.5;resize:v
 .date-sm{width:auto;padding:6px 10px;font-size:16px}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:10px}
 .group{border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;display:grid;gap:10px;min-width:0}
 .group legend{padding:0 6px;font-family:var(--f-data);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)}
 .flags legend{color:var(--stop)}
@@ -99,7 +100,7 @@ details.more[open]{display:grid;gap:10px}
 .link{font:inherit;font-weight:600;background:none;border:0;padding:4px 6px;border-radius:6px;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .link.danger{color:var(--stop);font-size:14px}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.alert{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;display:grid;gap:4px;font-size:15px}
+.alert{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;display:grid;gap:6px;font-size:15px}
 .alert.stop{background:var(--stop-soft);border-color:var(--stop)}
 .alert.stop strong{color:var(--stop)}
 .alert.warn{background:var(--warn-soft);border-color:var(--warn)}
@@ -142,6 +143,10 @@ td.bad{color:var(--stop);font-weight:600}
 .tag.locked{border:1px solid var(--line);color:var(--muted)}
 .bullets{margin:0;padding-left:20px;display:grid;gap:8px}
 .bullets li::marker{color:var(--muted)}
+.photos{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.photos li{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.photos li b{font-family:var(--f-display);font-size:18px;text-transform:uppercase;letter-spacing:.02em}
+.photos li.done span{color:var(--ok);font-weight:600}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;box-shadow:0 -4px 16px var(--shadow)}
 .tabbar button{font-family:var(--f-display);font-weight:700;font-size:clamp(12px,3.7vw,16px);letter-spacing:.02em;text-transform:uppercase;background:none;border:0;border-radius:8px;color:var(--muted);padding:11px 2px;cursor:pointer;min-width:0;white-space:nowrap}
 .tabbar button[aria-current="page"]{color:var(--ink);background:var(--sunken)}
@@ -185,8 +190,13 @@ td.bad{color:var(--stop);font-weight:600}
 'use strict';
 /*ENGINE-START*/
 var ENGINE=(function(){
-  const CFG={minDays:21,pauseDays:14,minLogged:5,thr:{2:140,3:150,4:160,5:170},goal:180,stuck:42};
-  const TYPES=['muscu','cardio','cross'];
+  const CFG={minDays:21,pauseDays:14,minLogged:5,thr:{2:140,3:150,4:160,5:170},goal:180,curlGoal:60/0.811,stuck:42} /* curl goal = e1RM of 60 kg x 5 @ RPE 8 */;
+  /* v2 (27 Oct 2026): four sessions in a loop. v1 "muscu" sessions count as Upper; v1 "cardio" sessions still count in weekly totals. */
+  const TYPES=['upper','lower','cross','arms'];
+  const NEW_TYPES=['lower','arms'];
+  const LEGACY_MAP={muscu:'upper'};
+  const EXTRA=['cardio'];
+  const V2_DATE='2026-10-27';
   const FREQ_NEED={4:2,5:3,6:4};
   const RTS=[100,97.8,95.5,93.9,92.2,90.7,89.2,87.8,86.3,85.0,83.7,82.4,81.1,79.9,78.6,77.4,76.2,75.1,73.9,72.3,70.7,69.4,68.0,66.7,65.3,64.0,62.6,61.3,59.9,58.6,57.4];
   const WT={
@@ -202,15 +212,18 @@ var ENGINE=(function(){
   en:{
     wd:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
     mon:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-    names:{muscu:'Muscu',cardio:'Cardio',cross:'Cross'},
+    names:{upper:'Upper',lower:'Lower',cross:'Cross',arms:'Arms',cardio:'Cardio (v1)'},
     tabs:{today:'Today',progress:'Progress',plan:'Plan',data:'Data'},
     brand:'Comeback',handle:'Six-month plan',navLabel:'Sections',langLabel:'Language',
     'st.starts':'Starts <b>{d}</b>',
     'st.day':'Day <b>{n}</b><br><b>{s}/{f}</b> sessions this week',
     noteEyebrow:'From Arthur',
     note:'Don’t expect your 180 bench to come back fast. Training is global, so focus on recovery: that is what unlocks more sessions per week.',
+    routineTitle:'Back & core routine · 6 min',
+    routine:'McGill curl-up, side plank on each side, bird dog on each side. 10-second holds: 5 reps, then 3, then 1.',
     'u.kg':'kg','u.kgWeek':'kg/week',
     'c.minDays':'3 weeks at this level',
+    'c.weeks4':'4 weeks at P6',
     'v.days':'{n}/{of} days',
     'c.noPec':'No pec pain in the last 14 days',
     'v.resumes':'resumes {s}',
@@ -223,11 +236,10 @@ var ENGINE=(function(){
     'v.best':'best {x}',
     'v.noSet':'no set yet',
     'c.back2':'Back pain 2/10 or less (14-day average)',
-    'c.talk2':'Last 2 sessions: full time, no stop, talk test held',
-    'c.recov2':'Last 2 sessions: full time, breathing back before each rest ended',
-    'c.blocks':'Last session: 4 blocks within 5% of each other',
-    'v.logBlocks':'log your 4 blocks',
-    'v.spread':'spread {x}%',
+    'c.back28':'Back pain 2/10 or less (28-day average)',
+    'c.clean2':'Last 2 Lower sessions clean (planned RPE or easier, no back pain)',
+    'c.top2':'Last 2 Arms sessions: top of the rep range on every set',
+    'c.curl':'Strict curl 60 kg × 5 at RPE 8 or less (e1RM ≈ 74)',
     'c.rpe7':'Last 2 sessions: every round at RPE 7 or easier',
     'c.emom':'Last 2 sessions: all 20 minutes held',
     'c.amrap':'One more full round than your first P4 session',
@@ -255,6 +267,11 @@ var ENGINE=(function(){
     'a.install':'<strong>Keep your data safe:</strong> add the app to your Home Screen. Open this link in Safari, tap Share, then “Add to Home Screen”, and always open the app from that icon.',
     'a.frameIOS':'<strong>On iPhone, this link erases your data when you close the browser.</strong> Before closing, copy your backup code (Data tab) into Notes, and restore it there next time.',
     'a.moved':'<strong>The app has moved.</strong> Open the new link, then move your data with your backup code (Data tab):',
+    'a.v2':'<strong>Training v2 is here:</strong> Upper, Lower, Cross, Arms in a loop, each with the back & core routine first. Your history and your levels are kept.',
+    'a.photos.base':'<strong>Take your starting photos</strong> and send them to Arthur.',
+    'a.photos.m3':'<strong>3-month photos:</strong> same poses, same place, same light. Send them to Arthur.',
+    'a.photos.m6':'<strong>6-month photos:</strong> same poses, same place, same light. Send them to Arthur.',
+    'a.photosDone':'Done',
     'a.stop':'<strong>Stop signal logged.</strong> Stop the session when it happens. If it does not pass, see a doctor and message Arthur. Level-ups resume on {d}.',
     'a.pec':'<strong>Pec pain logged.</strong> Bench is over for that session. Bench level-ups resume on {d}. A third tear means no 180, ever.',
     'a.stuck':'<strong>{type}: 6 weeks at P{l}.</strong> Message Arthur so he can adjust it.',
@@ -271,12 +288,10 @@ var ENGINE=(function(){
     'ev.freqUp':'{n} sessions per week unlocked',
     'ev.freqDown':'Back to {n} sessions per week',
     'n.next':'Next session','n.instead':'Logging instead','n.unlock':'Unlock','n.log':'Log this session','n.close':'Close the log',
-    'f.date':'Date','f.session':'Session','f.benchLegend':'Bench test set','f.kg':'kg','f.reps':'Reps','f.rpe':'RPE',
+    'f.date':'Date','f.session':'Session','f.benchLegend':'Bench test set','f.curlLegend':'Strict curl test set','f.kg':'kg','f.reps':'Reps','f.rpe':'RPE',
     'f.rpeHint':'RPE 8 = you had 2 reps left. Leave it empty if you did no test set today.',
-    'f.full':'I did the full time without stopping',
-    'f.talk':'I could say a full sentence the whole time (talk test)',
-    'f.recov':'My breathing was back to talk-test level before each rest ended',
-    'f.blocksLegend':'Distance of each 4-min block','f.blocksHint':'Meters, or kcal on a machine.','f.block':'Block {i}',
+    'f.clean':'All sets at the planned RPE or easier, no back pain during the session',
+    'f.top':'I hit the top of the rep range on every set',
     'f.rpe7':'I finished every round at RPE 7 or easier',
     'f.emom':'I held all 20 minutes (each minute done before the next began)',
     'f.rounds':'Full rounds completed',
@@ -310,30 +325,34 @@ var ENGINE=(function(){
     'wk.hint':'Meals and whisky are counted in days per week. Sleep, back pain and weight are weekly averages.',
     'h.title':'Log','h.empty':'Your sessions and level-ups will show up here.','h.delete':'Delete',
     'd.noTest':'no test set','d.full':'full time','d.cut':'cut short','d.talk':'talk test held','d.recov':'breathing back in time','d.blocks':'blocks {b}',
+    'd.clean':'clean','d.notClean':'not clean','d.top':'top of range','d.notTop':'below top of range',
     'd.rpe7':'RPE 7 or easier','d.emom':'20 min held','d.rounds':'{n} rounds','d.held':'5 rounds held','d.pace6':'6 rounds, same pace','d.logged':'logged',
     'pl.how':'How it works',
     'pl.howList':[
-      'Three sessions in a loop, always in this order: Muscu, Cardio, Cross, then again. The Today tab always shows the next one.',
+      'Four sessions in a loop, always in this order: Upper, Lower, Cross, Arms, then again. The Today tab always shows the next one.',
+      'Every session starts with the back & core routine. Your back and abs get work every single time: that was the missing piece before.',
       'Each session has 6 levels. You move up when every light is white, never before 3 weeks at a level. The app does it for you when you log.',
-      'The three sessions move at their own pace: you can be Muscu P3 and Cardio P2.',
+      'The four sessions move at their own pace: you can be P3 in Upper and P2 in Lower.',
       'You see your current level and the next one. The levels after that stay blurred until you get there.',
       'Sessions per week (3 to 6) unlock with your recovery: sleep, meals, whisky. A week counts once Sunday is over, with at least 5 days logged.',
       'Two weeks in a row below the lights of your level: you go back one level.',
       'Stuck 6 weeks at a level: message Arthur.',
-      'Days off: if you want to move, do the back routine (10 min).'],
+      'Days off: if you want to move, do the back & core routine.'],
+    'pl.routineWhy':'Why: your old mistake was zero core work. This base is what lets you bench heavy again without your back paying for it.',
     'pl.safety':'Safety rules',
     'pl.safetyLead':'They come before every level. A third pec tear means no 180, ever.',
     'pl.safetyList':[
       'Bench: always with safety arms or a spotter. 1-second pause on the chest, slow descent, grip a little narrower than your competition grip.',
       'After a heavy set: sit down before you stand up. If your vision goes dark, sit down and stop the set.',
       'Pec: at the slightest pain, bench is over for the day.',
+      'Elbows: if an elbow hurts on curls or skull crushers, switch to cables for the day.',
       'Stop the session for: pain going down the leg, numbness, chest pain during effort, asthma wheezing, a violent headache during effort. If it does not pass, see a doctor.',
       'Loads: never more than +2.5 kg per week on bench and +5 kg on lower body, even if it flies.',
       'Not allowed for these 6 months: heavy conventional deadlift, dips, flyes, Olympic lifts for reps, kipping, box jumps, weighted sit-ups or crunches, med ball slams.',
       'Asthma: if you have an inhaler, keep it on you at every session.',
       'At least one full day off per week.'],
-    'pl.muscuHint':'e1RM = your estimated 1-rep max from the test set (kg, reps and RPE), using the RTS chart. Even if your baseline already passes a level, every level lasts at least 3 weeks: your tendons need that time.',
-    'pl.crossLead':'Hard circuits for your breathing, never to technical failure. Allowed moves: kettlebell swing, goblet squat, step-up, push-ups, neutral-grip dumbbell press, row, pull-ups, farmer’s walk, suitcase carry, sled, bike, rower, shadow boxing.',
+    'pl.upperHint':'e1RM = your estimated 1-rep max from the test set (kg, reps and RPE), using the RTS chart. Even if a test already passes a level, every level lasts at least 3 weeks: your tendons need that time.',
+    'pl.crossLead':'Hard circuits for your breathing, never to technical failure. Allowed moves: hack squat, kettlebell swing, step-up, lunges, push-ups (on fists is fine), dumbbell press, machine row, shrugs, pull-ups, farmer’s walk, suitcase carry, sled, rower, shadow boxing.',
     'pl.freqCols':['Level','Unlock','Lights to keep white every week'],
     'pl.freqRows':[
       ['3','Start','–'],
@@ -346,6 +365,10 @@ var ENGINE=(function(){
       'Sleep: hours from bed to wake-up, logged each morning.',
       'Full meal: a big portion of protein + carbs + a fruit or vegetable. Best: count to reach 2 g of protein per kg of bodyweight, and fill the rest with carbs to gain the weight you want.',
       'Whisky: evenings per week. Cut down step by step, never all at once.'],
+    'pl.photosTitle':'Progress photos',
+    'pl.poses':'Front double biceps · back double biceps · front relaxed · side relaxed · back relaxed. Morning, same place, same light.',
+    'pl.photoBase':'Start','pl.photoM3':'Month 3','pl.photoM6':'Month 6',
+    'pl.photoDone':'done {d}','pl.photoNow':'now','pl.photoFrom':'from {d}',
     'pl.tags':{done:'Done',now:'Now',next:'Next',locked:'Locked'},
     'pl.lockedHint':'Unlocks after P{n}.',
     'dt.sumTitle':'Monthly summary for Arthur',
@@ -363,7 +386,7 @@ var ENGINE=(function(){
     'dt.resetTitle':'Reset','dt.resetHint':'Deletes all your data in this browser.','dt.resetBtn':'Delete all my data',
     'tt.copied':'Copied','tt.hold':'Press and hold the text, then tap Copy','tt.confirm':'Tap again to confirm',
     'tt.pickDate':'Pick a date','tt.future':'That date is in the future','tt.beforeStart':'That date is before your start date (see Data)',
-    'tt.fillTest':'Fill kg, reps and RPE for the test set','tt.checkKg':'Check the kg of your test set','tt.fillBlocks':'Fill all 4 blocks','tt.rounds':'Rounds: a whole number',
+    'tt.fillTest':'Fill kg, reps and RPE for the test set','tt.checkKg':'Check the kg of your test set','tt.rounds':'Rounds: a whole number',
     'tt.warnFast':'More than +2.5 kg per week on bench since {s}. Slow down: your tendons set the pace.',
     'tt.never10':'Never go to RPE 10.',
     'tt.savedStop':'Saved. Stop rules apply: read the red box.','tt.sessionSaved':'Session saved',
@@ -371,52 +394,64 @@ var ENGINE=(function(){
     'tt.pickStart':'Pick a start date','tt.startFuture':'The start date cannot be in the future','tt.saved':'Saved',
     'tt.dayCleared':'Day cleared','tt.sessionDeleted':'Session deleted','tt.sumCopied':'Summary copied',
     'tt.backupCopied':'Backup code copied. Paste it in your Notes app.','tt.badBackup':'This is not a valid backup code','tt.restored':'Data restored',
-    'tt.exOn':'Example on. Nothing is saved.','tt.exOff':'Back to your data','tt.allDeleted':'All data deleted',
+    'tt.exOn':'Example on. Nothing is saved.','tt.exOff':'Back to your data','tt.allDeleted':'All data deleted','tt.photosDone':'Noted. Send them to Arthur.',
     cues:{
-      muscu:'Back routine first: curl-up, side plank, bird dog (5–8 min). Bench with safety arms or a spotter. Sit down before you stand up after a heavy set.',
-      cardio:'Bike, rower, incline walk or run. Talk test (zone 2): you can say a full sentence at any time. Finish with the back routine (10 min).',
-      cross:'Never to technical failure. Allowed moves only (see Plan).'
+      upper:'Bench with safety arms or a spotter. Sit down before you stand up after a heavy set.',
+      lower:'Neutral back on every rep. Hack squat or leg press, whichever your back prefers. Stop the set if pain goes down your leg.',
+      cross:'Never to technical failure. Allowed moves only (see Plan).',
+      arms:'Double progression: once you hit the top of the rep range on every set, add weight next time. Elbows before ego.'
     },
     flags:{pec:'Pec pain',vision:'Vision went dark',leg:'Pain down the leg or numbness',chest:'Chest pain during effort',asthma:'Asthma wheezing',headache:'Violent headache during effort'},
     levels:{
-      muscu:[
-        {name:'Comeback',items:['Paused bench 4×8 at RPE 6','Goblet squat 3×10','Dumbbell RDL 3×10','Row 3×10','Pull-ups 3×6–8'],test:'Week 3 only: baseline test, bench 5 reps at RPE 8.',unlock:'3 weeks + baseline test + no pec pain + back pain 3/10 or less'},
-        {name:'Volume',items:['Bench: top set of 5 at RPE 7–8, then 3×6 at RPE 7','Squat (goblet or leg press) 4×8','RDL 3×8','Rows and pull-ups 3×8'],test:'Your top set: 5 reps at RPE 7–8.',unlock:'115 kg × 5 at RPE 8 or less (e1RM ≈ 142)'},
-        {name:'Volume to strength',items:['Bench: top set of 5 at RPE 8, then 3×5 at −10%','Squat (front squat or leg press) 4×6','RDL 3×6','Weighted pull-ups 4×5'],test:'Your top set: 5 reps at RPE 8.',unlock:'122.5 kg × 5 at RPE 8 or less (≈ 151) + back pain 2/10 or less over 2 weeks'},
-        {name:'Strength',items:['Bench: top set of 3 at RPE 8, then 3×4 at −8%','Squat 5×4 at RPE 8','Trap bar or RDL 3×5 at RPE 7','Weighted pull-ups 4×4'],test:'Your top set: 3 reps at RPE 8.',unlock:'140 kg × 3 at RPE 8 or less (≈ 162)'},
-        {name:'Heavy strength',items:['Bench: top set of 2 at RPE 8, then 4×3 at −10%','Squat 4×3–4','Trap bar or RDL 3×4','Weighted pull-ups 5×3'],test:'Your top set: 2 reps at RPE 8.',unlock:'152.5 kg × 2 at RPE 8 or less (≈ 171)'},
+      upper:[
+        {name:'Comeback',items:['Paused bench 4×8 at RPE 6','Chest-supported or machine row 3×10','Pull-ups 3×6–8','Neutral-grip dumbbell press 3×10','Face pulls 3×15','Dead bug 3×8 per side'],test:'Week 3 only: baseline test, bench 5 reps at RPE 8.',unlock:'3 weeks + baseline test + no pec pain'},
+        {name:'Volume',items:['Bench: top set of 5 at RPE 7–8, then 3×6 at RPE 7','Row 4×8','Pull-ups 3×8','Neutral-grip dumbbell press 3×10','Lateral raises 3×15','Dead bug 3×10 per side'],test:'Your top set: 5 reps at RPE 7–8.',unlock:'115 kg × 5 at RPE 8 or less (e1RM ≈ 142)'},
+        {name:'Volume to strength',items:['Bench: top set of 5 at RPE 8, then 3×5 at −10%','Row 4×6','Weighted pull-ups 4×5','Incline dumbbell press 3×8','Face pulls 3×15','Ab wheel from the knees 3×8'],test:'Your top set: 5 reps at RPE 8.',unlock:'122.5 kg × 5 at RPE 8 or less (≈ 151)'},
+        {name:'Strength',items:['Bench: top set of 3 at RPE 8, then 3×4 at −8%','Row 4×6','Weighted pull-ups 4×4','Incline dumbbell press 3×8','Lateral raises 3×15','Ab wheel from the knees 3×10'],test:'Your top set: 3 reps at RPE 8.',unlock:'140 kg × 3 at RPE 8 or less (≈ 162)'},
+        {name:'Heavy strength',items:['Bench: top set of 2 at RPE 8, then 4×3 at −10%','Row 4×5','Weighted pull-ups 5×3','Incline dumbbell press 3×8','Face pulls 3×15','Ab wheel from the knees 3×12'],test:'Your top set: 2 reps at RPE 8.',unlock:'152.5 kg × 2 at RPE 8 or less (≈ 171)'},
         {name:'Validation',items:['Bench: top set of 2–3 at RPE 8–9 (never 10), then 3×3','Everything else as P5','Light week (−40% volume) before the validation'],test:'Your top set: 2–3 reps at RPE 8–9. Never 10.',unlock:'Goal: 167.5 kg × 2 or 162.5 kg × 3 at RPE 9 (≈ 182)'}
       ],
-      cardio:[
-        {name:'Easy 25',items:['25 min non-stop at talk-test pace'],unlock:'2 full sessions in a row, no stops'},
-        {name:'Easy 35',items:['35 min non-stop at talk-test pace'],unlock:'2 full sessions in a row, no stops'},
-        {name:'Easy 45',items:['45 min non-stop at talk-test pace'],unlock:'2 full sessions in a row, no stops'},
-        {name:'Pickups',items:['35 min at talk-test pace','Then 5 × 1 min faster (RPE 7), 2 min easy between'],unlock:'2 full sessions, breathing back to talk test before each rest ends'},
-        {name:'3-min blocks',items:['30 min at talk-test pace','Then 4 × 3 min at RPE 7–8, 2 min easy between'],unlock:'2 full sessions, breathing back to talk test before each rest ends'},
-        {name:'4×4',items:['25 min at talk-test pace','Then 4 × 4 min at RPE 8, 3 min easy between'],unlock:'Goal: all 4 blocks at the same distance, within 5%'}
+      lower:[
+        {name:'Base',items:['Hack squat or leg press 3×10 at RPE 6–7','Dumbbell RDL 3×10 at RPE 7','Lying leg curl 3×12','45° back extension, bodyweight, 2 s hold at the top, 3×10','Pallof press 3×10 per side','Calf raises 3×15'],unlock:'Last 2 Lower sessions clean + back pain 3/10 or less'},
+        {name:'Volume',items:['Hack squat 4×8 at RPE 7','Dumbbell RDL 3×8 at RPE 7','Walking lunges 3×10 per leg','Leg curl 3×12','Back extension 3×12','Pallof press 3×12 per side'],unlock:'Last 2 Lower sessions clean + back pain 3/10 or less'},
+        {name:'Volume to strength',items:['Hack squat: top set of 6 at RPE 8, then 3×6 at −10%','Barbell RDL 3×6 at RPE 7','Bulgarian split squat 3×8 per leg','Leg curl 3×10','Back extension holding a 5–10 kg plate 3×10','Pallof press 3×12 per side'],unlock:'Last 2 Lower sessions clean + back pain 2/10 or less over 2 weeks'},
+        {name:'Strength',items:['Hack squat: top set of 4 at RPE 8, then 3×5 at −10%','Trap bar deadlift 3×5 at RPE 7','Bulgarian split squat 3×8 per leg','Leg curl 3×10','Weighted back extension 3×12','Suitcase carry 3×30 m per side'],unlock:'Last 2 Lower sessions clean + back pain 2/10 or less over 2 weeks'},
+        {name:'Heavy',items:['Hack squat: top set of 3 at RPE 8, then 4×4 at −10%','Trap bar deadlift 3×4 at RPE 7–8','Walking lunges 3×10 per leg','Leg curl 3×10','Weighted back extension 3×12','Suitcase carry 3×40 m per side'],unlock:'Last 2 Lower sessions clean + back pain 2/10 or less over 2 weeks'},
+        {name:'Solid back',items:['Hack squat: top set of 3 at RPE 8–9, then 3×3','Trap bar deadlift 3×3 at RPE 8','Everything else as P5'],unlock:'Goal: 4 weeks at P6 with back pain 2/10 or less'}
       ],
       cross:[
-        {name:'3 rounds',items:['3 rounds, 2 min rest','10 goblet squats · 10 push-ups · 10 one-arm dumbbell rows per side · 30 m farmer’s walk · 1 min bike'],unlock:'2 full sessions at RPE 7 or easier'},
+        {name:'3 rounds',items:['3 rounds, 2 min rest','10 hack squats · 20–30 push-ups on fists · 15 machine rows + 15 shrugs · 20 dumbbell lunges · 30 m farmer’s walk'],unlock:'2 full sessions at RPE 7 or easier'},
         {name:'4 rounds',items:['4 rounds, 90 s rest','P1 circuit + 15 kettlebell swings + 30 m suitcase carry per side'],unlock:'2 full sessions at RPE 7 or easier'},
-        {name:'EMOM 20',items:['EMOM 20 min, rotating','12 KB swings · 12 push-ups · 12 cal rower · 40 m farmer’s walk'],unlock:'All 20 minutes held, 2 sessions in a row'},
-        {name:'AMRAP 15',items:['AMRAP 15 min','10 loaded step-ups · 10 dumbbell presses · 8 pull-ups · 12 cal bike','Count your rounds'],unlock:'One more full round than your first P4 session'},
+        {name:'EMOM 20',items:['EMOM 20 min, rotating','12 KB swings · 15 push-ups on fists · 12 cal rower (or 20 lunges) · 40 m farmer’s walk'],unlock:'All 20 minutes held, 2 sessions in a row'},
+        {name:'AMRAP 15',items:['AMRAP 15 min','10 loaded step-ups · 10 dumbbell presses · 8 pull-ups · 20 lunges','Count your rounds'],unlock:'One more full round than your first P4 session'},
         {name:'Boxing ×5',items:['5 rounds of 3 min, 1 min rest','Each round: 1 min shadow boxing · 1 min KB swings · 1 min carry or sled'],unlock:'5 rounds with the kettlebell never down, 2 sessions in a row'},
         {name:'Boxing ×6',items:['6 rounds, same format','Heavy bag with wraps if available'],unlock:'Goal: 6 rounds at the same pace'}
+      ],
+      arms:[
+        {name:'Base',items:['EZ-bar curl 3×10–12','Hammer curl 3×10–12','Cable pushdown 3×12–15','Overhead cable extension 3×12–15','RKC plank 3×20 s'],unlock:'Top of the rep range on every set, 2 sessions in a row'},
+        {name:'Volume',items:['EZ-bar curl 4×10–12','Incline dumbbell curl 3×10–12','Cable pushdown 4×10–12','Overhead cable extension 3×10–12','RKC plank 3×30 s'],unlock:'Top of the rep range on every set, 2 sessions in a row'},
+        {name:'Load',items:['EZ-bar curl 4×8–10','Hammer curl 3×8–10','EZ skull crusher 3×10–12, light, elbows comfortable','Cable pushdown 3×10–12','Hanging knee raises 3×10, no swinging'],unlock:'Top of the rep range on every set, 2 sessions in a row'},
+        {name:'Heavy',items:['Strict barbell curl 4×6–8','Hammer curl 3×8–10','EZ skull crusher 4×8–10','Overhead cable extension 3×10–12','Hanging knee raises 3×12, no swinging'],unlock:'Top of the rep range on every set, 2 sessions in a row'},
+        {name:'Strength',items:['Strict barbell curl 5×5–6','Incline dumbbell curl 3×8–10','EZ skull crusher 4×6–8','Cable pushdown 3×10–12','Hanging knee raises 3×15, no swinging'],unlock:'Top of the rep range on every set, 2 sessions in a row'},
+        {name:'Peak',items:['Strict barbell curl: top set of 5 at RPE 8, then 3×6','EZ skull crusher: top set of 6 at RPE 8, then 3×8','Hammer curl and pushdown 3×10–12','Hanging knee raises 3×15'],test:'Your strict curl top set: 5 reps at RPE 8.',unlock:'Goal: strict curl 60 kg × 5 at RPE 8 or less (e1RM ≈ 74)'}
       ]
     }
   },
   ru:{
     wd:['пн','вт','ср','чт','пт','сб','вс'],
     mon:['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'],
-    names:{muscu:'Силовая',cardio:'Кардио',cross:'Кросс-тренинг'},
+    names:{upper:'Верх',lower:'Низ',cross:'Кросс-тренинг',arms:'Руки',cardio:'Кардио (v1)'},
     tabs:{today:'Сегодня',progress:'Прогресс',plan:'План',data:'Данные'},
     brand:'Камбэк',handle:'План на 6 месяцев',navLabel:'Разделы',langLabel:'Язык',
     'st.starts':'Старт <b>{d}</b>',
     'st.day':'День <b>{n}</b><br>На неделе: <b>{s}/{f}</b>',
     noteEyebrow:'От Артура',
     note:'Не жди, что твои 180 в жиме вернутся быстро. Здесь всё связано, так что сосредоточься на восстановлении: именно оно открывает больше тренировок в неделю.',
+    routineTitle:'Комплекс для спины и кора · 6 мин',
+    routine:'Скручивание Макгилла, боковая планка на каждую сторону, «птица-собака» на каждую сторону. Удержания по 10 секунд: 5 повторов, потом 3, потом 1.',
     'u.kg':'кг','u.kgWeek':'кг/нед.',
     'c.minDays':'3 недели на этом уровне',
+    'c.weeks4':'4 недели на P6',
     'v.days':'{n}/{of} дн.',
     'c.noPec':'Без боли в грудной последние 14 дней',
     'v.resumes':'с {s}',
@@ -429,11 +464,10 @@ var ENGINE=(function(){
     'v.best':'лучший {x}',
     'v.noSet':'ещё нет',
     'c.back2':'Боль в спине до 2/10 (среднее за 14 дней)',
-    'c.talk2':'Последние 2 тренировки: всё время без остановок, в разговорном темпе',
-    'c.recov2':'Последние 2 тренировки: всё время, дыхание успевало восстановиться за каждый отдых',
-    'c.blocks':'Последняя тренировка: 4 блока с разницей до 5%',
-    'v.logBlocks':'запиши блоки',
-    'v.spread':'разброс {x}%',
+    'c.back28':'Боль в спине до 2/10 (среднее за 28 дней)',
+    'c.clean2':'Последние 2 тренировки «Низ» чистые (RPE по плану или легче, без боли в спине)',
+    'c.top2':'Последние 2 тренировки «Руки»: верх диапазона во всех подходах',
+    'c.curl':'Строгий подъём 60 кг × 5 на RPE 8 или легче (e1RM ≈ 74)',
     'c.rpe7':'Последние 2 тренировки: каждый круг на RPE 7 или легче',
     'c.emom':'Последние 2 тренировки: все 20 минут выдержаны',
     'c.amrap':'На 1 полный круг больше, чем в первой тренировке P4',
@@ -461,6 +495,11 @@ var ENGINE=(function(){
     'a.install':'<strong>Чтобы данные не пропадали,</strong> добавь приложение на экран «Домой»: открой эту ссылку в Safari, нажми «Поделиться» → «На экран „Домой“» и дальше открывай приложение только с этой иконки.',
     'a.frameIOS':'<strong>На iPhone эта ссылка стирает данные, когда закрываешь браузер.</strong> Перед закрытием копируй код резервной копии (вкладка «Данные») в «Заметки», а в следующий раз восстанавливай его там же.',
     'a.moved':'<strong>Приложение переехало.</strong> Открой новую ссылку и перенеси данные через код резервной копии (вкладка «Данные»):',
+    'a.v2':'<strong>Тренировки v2:</strong> Верх, Низ, Кросс-тренинг, Руки по кругу, и каждая начинается с комплекса для спины и кора. История и уровни сохранены.',
+    'a.photos.base':'<strong>Сделай стартовые фото</strong> и отправь их Артуру.',
+    'a.photos.m3':'<strong>Фото через 3 месяца:</strong> те же позы, то же место, тот же свет. Отправь их Артуру.',
+    'a.photos.m6':'<strong>Фото через 6 месяцев:</strong> те же позы, то же место, тот же свет. Отправь их Артуру.',
+    'a.photosDone':'Готово',
     'a.stop':'<strong>Записан стоп-сигнал.</strong> Если такое случается, прекращай тренировку. Если не проходит — иди к врачу и напиши Артуру. Новые уровни снова откроются с {s}.',
     'a.pec':'<strong>Записана боль в грудной.</strong> Жим на этой тренировке закончен. Уровни в жиме снова откроются с {s}. Третий разрыв — и 180 не будет уже никогда.',
     'a.stuck':'<strong>{type}: 6 недель на P{l}.</strong> Напиши Артуру, чтобы он подправил план.',
@@ -477,12 +516,10 @@ var ENGINE=(function(){
     'ev.freqUp':p=>'Открыто: '+p.n+' '+trn(p.n)+' в неделю',
     'ev.freqDown':p=>'Снова '+p.n+' '+trn(p.n)+' в неделю',
     'n.next':'Следующая тренировка','n.instead':'Записываешь другую','n.unlock':'Переход','n.log':'Записать тренировку','n.close':'Закрыть запись',
-    'f.date':'Дата','f.session':'Тренировка','f.benchLegend':'Тестовый подход в жиме','f.kg':'кг','f.reps':'Повторы','f.rpe':'RPE',
+    'f.date':'Дата','f.session':'Тренировка','f.benchLegend':'Тестовый подход в жиме','f.curlLegend':'Тестовый подход: строгий подъём','f.kg':'кг','f.reps':'Повторы','f.rpe':'RPE',
     'f.rpeHint':'RPE 8 = в запасе оставалось 2 повтора. Оставь пустым, если сегодня не было тестового подхода.',
-    'f.full':'Я сделал всё время без остановок',
-    'f.talk':'Я всё время мог сказать целое предложение (разговорный тест)',
-    'f.recov':'Дыхание успевало вернуться к разговорному темпу до конца каждого отдыха',
-    'f.blocksLegend':'Дистанция каждого 4-минутного блока','f.blocksHint':'Метры или ккал на тренажёре.','f.block':'Блок {i}',
+    'f.clean':'Все подходы на плановом RPE или легче, без боли в спине во время тренировки',
+    'f.top':'Во всех подходах сделал верх диапазона повторов',
     'f.rpe7':'Каждый круг был на RPE 7 или легче',
     'f.emom':'Я выдержал все 20 минут (каждую минуту успевал до начала следующей)',
     'f.rounds':'Сколько полных кругов сделал',
@@ -516,30 +553,34 @@ var ENGINE=(function(){
     'wk.hint':'Приёмы пищи и виски считаются в днях за неделю. Сон, боль в спине и вес — средние за неделю.',
     'h.title':'Журнал','h.empty':'Здесь появятся твои тренировки и новые уровни.','h.delete':'Удалить',
     'd.noTest':'без тестового подхода','d.full':'всё время','d.cut':'не до конца','d.talk':'разговорный темп','d.recov':'дыхание успевало','d.blocks':'блоки {b}',
+    'd.clean':'чисто','d.notClean':'не чисто','d.top':'верх диапазона','d.notTop':'ниже верха диапазона',
     'd.rpe7':'RPE 7 или легче','d.emom':'20 мин выдержаны','d.rounds':p=>p.n+' '+plRu(p.n,'круг','круга','кругов'),'d.held':'5 раундов выдержаны','d.pace6':'6 раундов в одном темпе','d.logged':'записано',
     'pl.how':'Как это работает',
     'pl.howList':[
-      'Три тренировки по кругу, всегда в таком порядке: Силовая, Кардио, Кросс-тренинг — и снова сначала. Во вкладке «Сегодня» всегда видна следующая.',
+      'Четыре тренировки по кругу, всегда в таком порядке: Верх, Низ, Кросс-тренинг, Руки — и снова сначала. Во вкладке «Сегодня» всегда видна следующая.',
+      'Каждая тренировка начинается с комплекса для спины и кора. Спина и пресс работают каждый раз: раньше именно этого не хватало.',
       'У каждой тренировки 6 уровней. Переходишь выше, когда все лампы белые, но не раньше чем через 3 недели на уровне. Приложение делает это само, когда ты записываешь тренировку.',
-      'Каждая тренировка прогрессирует в своём темпе: можно быть на Силовой P3 и на Кардио P2.',
+      'Каждая тренировка прогрессирует в своём темпе: можно быть на P3 в «Верхе» и на P2 в «Низе».',
       'Ты видишь свой текущий уровень и следующий. Остальные размыты, пока ты до них не дойдёшь.',
       'Число тренировок в неделю (от 3 до 6) открывается за счёт восстановления: сна, еды, виски. Неделя засчитывается после воскресенья, если заполнено минимум 5 дней.',
       'Две недели подряд не все лампы белые — возвращаешься на уровень ниже.',
       'Застрял на одном уровне 6 недель — напиши Артуру.',
-      'В дни отдыха, если хочется подвигаться, делай комплекс для спины (10 мин).'],
+      'В дни отдыха, если хочется подвигаться, делай комплекс для спины и кора.'],
+    'pl.routineWhy':'Зачем: твоя старая ошибка — ноль работы на кор. Эта база позволит снова жать тяжело, не расплачиваясь спиной.',
     'pl.safety':'Правила безопасности',
     'pl.safetyLead':'Они важнее любого уровня. Третий разрыв грудной — и 180 не будет уже никогда.',
     'pl.safetyList':[
       'Жим: всегда со страховочными упорами или со страхующим. Пауза 1 секунда на груди, медленное опускание, хват чуть уже соревновательного.',
       'После тяжёлого подхода сначала сядь, потом вставай. Если темнеет в глазах — садись и прекращай подход.',
       'Грудная мышца: при малейшей боли жим на сегодня закончен.',
+      'Локти: если на сгибаниях или французском жиме болит локоть — в этот день переходи на блоки.',
       'Прекращай тренировку, если боль отдаёт в ногу, появилось онемение, боль в груди при нагрузке, свистящее дыхание при астме или сильная головная боль при нагрузке. Если не проходит — иди к врачу.',
       'Веса: не больше +2,5 кг в неделю в жиме и +5 кг в упражнениях на ноги, даже если вес летит.',
       'Под запретом на эти 6 месяцев: тяжёлая классическая становая тяга, отжимания на брусьях, разводки, рывок и толчок на повторы, киппинг, прыжки на тумбу, скручивания с отягощением, броски медбола в пол.',
       'Астма: если есть ингалятор, держи его при себе на каждой тренировке.',
       'Минимум один полный выходной в неделю.'],
-    'pl.muscuHint':'e1RM — расчётный одноповторный максимум по тестовому подходу (кг, повторы и RPE), по таблице RTS. Даже если стартовый тест уже проходит уровень, каждый уровень длится минимум 3 недели: сухожилиям нужно это время.',
-    'pl.crossLead':'Тяжёлые круговые на дыхалку, никогда до технического отказа. Разрешённые упражнения: махи гирей, гоблет-присед, зашагивания на тумбу, отжимания, жим гантелей нейтральным хватом, тяга в наклоне, подтягивания, прогулка фермера, переноска груза в одной руке, сани, велотренажёр, гребной тренажёр, бой с тенью.',
+    'pl.upperHint':'e1RM — расчётный одноповторный максимум по тестовому подходу (кг, повторы и RPE), по таблице RTS. Даже если тест уже проходит уровень, каждый уровень длится минимум 3 недели: сухожилиям нужно это время.',
+    'pl.crossLead':'Тяжёлые круговые на дыхалку, никогда до технического отказа. Разрешённые упражнения: гакк-присед, махи гирей, зашагивания на тумбу, выпады, отжимания (можно на кулаках), жим гантелей, тяга в тренажёре, шраги, подтягивания, прогулка фермера, переноска груза в одной руке, сани, гребной тренажёр, бой с тенью.',
     'pl.freqCols':['Уровень','Как открыть','Какие лампы должны быть белыми каждую неделю'],
     'pl.freqRows':[
       ['3','Старт','–'],
@@ -552,6 +593,10 @@ var ENGINE=(function(){
       'Сон: часы от отбоя до подъёма, записывай каждое утро.',
       'Полноценный приём пищи: большая порция белка + углеводы + фрукт или овощ. Лучше всего считать: 2 г белка на кг веса тела, а остальное добирать в основном углеводами, чтобы набрать нужный вес.',
       'Виски: сколько вечеров в неделю. Сокращай постепенно, никогда не бросай резко.'],
+    'pl.photosTitle':'Фото прогресса',
+    'pl.poses':'Двойной бицепс спереди · двойной бицепс сзади · расслабленно спереди · сбоку · сзади. Утром, в одном месте, при одном свете.',
+    'pl.photoBase':'Старт','pl.photoM3':'3 месяца','pl.photoM6':'6 месяцев',
+    'pl.photoDone':'сделано {d}','pl.photoNow':'сейчас','pl.photoFrom':'с {d}',
     'pl.tags':{done:'Пройден',now:'Сейчас',next:'Дальше',locked:'Закрыт'},
     'pl.lockedHint':'Откроется после P{n}.',
     'dt.sumTitle':'Сводка для Артура за месяц',
@@ -569,7 +614,7 @@ var ENGINE=(function(){
     'dt.resetTitle':'Сброс','dt.resetHint':'Удаляет все твои данные в этом браузере.','dt.resetBtn':'Удалить все мои данные',
     'tt.copied':'Скопировано','tt.hold':'Зажми текст и нажми «Копировать»','tt.confirm':'Нажми ещё раз, чтобы подтвердить',
     'tt.pickDate':'Выбери дату','tt.future':'Эта дата ещё не наступила','tt.beforeStart':'Эта дата раньше даты старта (см. «Данные»)',
-    'tt.fillTest':'Заполни кг, повторы и RPE тестового подхода','tt.checkKg':'Проверь вес тестового подхода','tt.fillBlocks':'Заполни все 4 блока','tt.rounds':'Круги: целое число',
+    'tt.fillTest':'Заполни кг, повторы и RPE тестового подхода','tt.checkKg':'Проверь вес тестового подхода','tt.rounds':'Круги: целое число',
     'tt.warnFast':'Больше +2,5 кг в неделю в жиме с {s}. Сбавь темп: скорость задают сухожилия.',
     'tt.never10':'Никогда не доходи до RPE 10.',
     'tt.savedStop':'Сохранено. Действуют стоп-правила: прочитай красный блок.','tt.sessionSaved':'Тренировка сохранена',
@@ -577,37 +622,46 @@ var ENGINE=(function(){
     'tt.pickStart':'Выбери дату старта','tt.startFuture':'Дата старта не может быть в будущем','tt.saved':'Сохранено',
     'tt.dayCleared':'День очищен','tt.sessionDeleted':'Тренировка удалена','tt.sumCopied':'Сводка скопирована',
     'tt.backupCopied':'Код копии скопирован. Вставь его в «Заметки».','tt.badBackup':'Это не код резервной копии','tt.restored':'Данные восстановлены',
-    'tt.exOn':'Пример включён. Ничего не сохраняется.','tt.exOff':'Снова твои данные','tt.allDeleted':'Все данные удалены',
+    'tt.exOn':'Пример включён. Ничего не сохраняется.','tt.exOff':'Снова твои данные','tt.allDeleted':'Все данные удалены','tt.photosDone':'Отмечено. Отправь фото Артуру.',
     cues:{
-      muscu:'Сначала комплекс для спины: скручивание Макгилла, боковая планка, «птица-собака» (5–8 мин). Жим — только со страховочными упорами или страхующим. После тяжёлого подхода сначала сядь, потом вставай.',
-      cardio:'Велотренажёр, гребной тренажёр, ходьба в горку или бег. Разговорный тест (зона 2): в любой момент можешь сказать целое предложение. В конце — комплекс для спины (10 мин).',
-      cross:'Никогда до технического отказа. Только разрешённые упражнения (см. «План»).'
+      upper:'Жим — только со страховочными упорами или страхующим. После тяжёлого подхода сначала сядь, потом вставай.',
+      lower:'Спина нейтральная в каждом повторе. Гакк-присед или жим ногами — что спине спокойнее. Если боль отдаёт в ногу, прекращай подход.',
+      cross:'Никогда до технического отказа. Только разрешённые упражнения (см. «План»).',
+      arms:'Двойная прогрессия: когда во всех подходах сделал верх диапазона повторов, в следующий раз добавь вес. Локти важнее эго.'
     },
     flags:{pec:'Боль в грудной мышце',vision:'Потемнело в глазах',leg:'Боль отдаёт в ногу или онемение',chest:'Боль в груди при нагрузке',asthma:'Свистящее дыхание при астме',headache:'Сильная головная боль при нагрузке'},
     levels:{
-      muscu:[
-        {name:'Возвращение',items:['Жим лёжа с паузой 4×8 на RPE 6','Гоблет-присед 3×10','Румынская тяга с гантелями 3×10','Тяга в наклоне 3×10','Подтягивания 3×6–8'],test:'Только на 3-й неделе: стартовый тест — жим на 5 повторов на RPE 8.',unlock:'3 недели + стартовый тест + без боли в грудной + боль в спине до 3/10'},
-        {name:'Объём',items:['Жим: топ-сет на 5 повторов на RPE 7–8, затем 3×6 на RPE 7','Присед (гоблет или жим ногами) 4×8','Румынская тяга 3×8','Тяга в наклоне и подтягивания 3×8'],test:'Твой топ-сет: 5 повторов на RPE 7–8.',unlock:'115 кг × 5 на RPE 8 или легче (e1RM ≈ 142)'},
-        {name:'От объёма к силе',items:['Жим: топ-сет на 5 повторов на RPE 8, затем 3×5 с весом на 10% меньше','Присед (фронтальный или жим ногами) 4×6','Румынская тяга 3×6','Подтягивания с отягощением 4×5'],test:'Твой топ-сет: 5 повторов на RPE 8.',unlock:'122,5 кг × 5 на RPE 8 или легче (≈ 151) + боль в спине до 2/10 две недели'},
-        {name:'Сила',items:['Жим: топ-сет на 3 повтора на RPE 8, затем 3×4 с весом на 8% меньше','Присед 5×4 на RPE 8','Тяга с трэп-грифом или румынская тяга 3×5 на RPE 7','Подтягивания с отягощением 4×4'],test:'Твой топ-сет: 3 повтора на RPE 8.',unlock:'140 кг × 3 на RPE 8 или легче (≈ 162)'},
-        {name:'Тяжёлый блок',items:['Жим: топ-сет на 2 повтора на RPE 8, затем 4×3 с весом на 10% меньше','Присед 4×3–4','Тяга с трэп-грифом или румынская тяга 3×4','Подтягивания с отягощением 5×3'],test:'Твой топ-сет: 2 повтора на RPE 8.',unlock:'152,5 кг × 2 на RPE 8 или легче (≈ 171)'},
+      upper:[
+        {name:'Возвращение',items:['Жим лёжа с паузой 4×8 на RPE 6','Тяга с упором грудью или в тренажёре 3×10','Подтягивания 3×6–8','Жим гантелей нейтральным хватом 3×10','Тяга каната к лицу 3×15','«Мёртвый жук» 3×8 на сторону'],test:'Только на 3-й неделе: стартовый тест — жим на 5 повторов на RPE 8.',unlock:'3 недели + стартовый тест + без боли в грудной'},
+        {name:'Объём',items:['Жим: топ-сет на 5 повторов на RPE 7–8, затем 3×6 на RPE 7','Тяга 4×8','Подтягивания 3×8','Жим гантелей нейтральным хватом 3×10','Махи гантелями в стороны 3×15','«Мёртвый жук» 3×10 на сторону'],test:'Твой топ-сет: 5 повторов на RPE 7–8.',unlock:'115 кг × 5 на RPE 8 или легче (e1RM ≈ 142)'},
+        {name:'От объёма к силе',items:['Жим: топ-сет на 5 повторов на RPE 8, затем 3×5 с весом на 10% меньше','Тяга 4×6','Подтягивания с отягощением 4×5','Жим гантелей на наклонной скамье 3×8','Тяга каната к лицу 3×15','Ролик для пресса с колен 3×8'],test:'Твой топ-сет: 5 повторов на RPE 8.',unlock:'122,5 кг × 5 на RPE 8 или легче (≈ 151)'},
+        {name:'Сила',items:['Жим: топ-сет на 3 повтора на RPE 8, затем 3×4 с весом на 8% меньше','Тяга 4×6','Подтягивания с отягощением 4×4','Жим гантелей на наклонной скамье 3×8','Махи гантелями в стороны 3×15','Ролик для пресса с колен 3×10'],test:'Твой топ-сет: 3 повтора на RPE 8.',unlock:'140 кг × 3 на RPE 8 или легче (≈ 162)'},
+        {name:'Тяжёлый блок',items:['Жим: топ-сет на 2 повтора на RPE 8, затем 4×3 с весом на 10% меньше','Тяга 4×5','Подтягивания с отягощением 5×3','Жим гантелей на наклонной скамье 3×8','Тяга каната к лицу 3×15','Ролик для пресса с колен 3×12'],test:'Твой топ-сет: 2 повтора на RPE 8.',unlock:'152,5 кг × 2 на RPE 8 или легче (≈ 171)'},
         {name:'Зачёт',items:['Жим: топ-сет на 2–3 повтора на RPE 8–9 (никогда не 10), затем 3×3','Остальное как в P5','Лёгкая неделя (объём −40%) перед зачётом'],test:'Твой топ-сет: 2–3 повтора на RPE 8–9. Никогда не 10.',unlock:'Цель: 167,5 кг × 2 или 162,5 кг × 3 на RPE 9 (≈ 182)'}
       ],
-      cardio:[
-        {name:'Легко 25',items:['25 мин без остановки в разговорном темпе'],unlock:'2 полные тренировки подряд без остановок'},
-        {name:'Легко 35',items:['35 мин без остановки в разговорном темпе'],unlock:'2 полные тренировки подряд без остановок'},
-        {name:'Легко 45',items:['45 мин без остановки в разговорном темпе'],unlock:'2 полные тренировки подряд без остановок'},
-        {name:'Ускорения',items:['35 мин в разговорном темпе','Затем 5 × 1 мин быстрее (RPE 7), между ними 2 мин легко'],unlock:'2 полные тренировки, дыхание возвращается к разговорному темпу до конца каждого отдыха'},
-        {name:'Блоки по 3 мин',items:['30 мин в разговорном темпе','Затем 4 × 3 мин на RPE 7–8, между ними 2 мин легко'],unlock:'2 полные тренировки, дыхание возвращается к разговорному темпу до конца каждого отдыха'},
-        {name:'4×4',items:['25 мин в разговорном темпе','Затем 4 × 4 мин на RPE 8, между ними 3 мин легко'],unlock:'Цель: все 4 блока на одну дистанцию, разница не больше 5%'}
+      lower:[
+        {name:'База',items:['Гакк-присед или жим ногами 3×10 на RPE 6–7','Румынская тяга с гантелями 3×10 на RPE 7','Сгибания ног лёжа 3×12','Гиперэкстензия 45° с собственным весом, пауза 2 с наверху, 3×10','Жим Паллофа 3×10 на сторону','Подъёмы на носки 3×15'],unlock:'Последние 2 тренировки «Низ» чистые + боль в спине до 3/10'},
+        {name:'Объём',items:['Гакк-присед 4×8 на RPE 7','Румынская тяга с гантелями 3×8 на RPE 7','Выпады в ходьбе 3×10 на ногу','Сгибания ног 3×12','Гиперэкстензия 3×12','Жим Паллофа 3×12 на сторону'],unlock:'Последние 2 тренировки «Низ» чистые + боль в спине до 3/10'},
+        {name:'От объёма к силе',items:['Гакк-присед: топ-сет на 6 повторов на RPE 8, затем 3×6 с весом на 10% меньше','Румынская тяга со штангой 3×6 на RPE 7','Болгарские выпады 3×8 на ногу','Сгибания ног 3×10','Гиперэкстензия с блином 5–10 кг 3×10','Жим Паллофа 3×12 на сторону'],unlock:'Последние 2 тренировки «Низ» чистые + боль в спине до 2/10 две недели'},
+        {name:'Сила',items:['Гакк-присед: топ-сет на 4 повтора на RPE 8, затем 3×5 с весом на 10% меньше','Тяга с трэп-грифом 3×5 на RPE 7','Болгарские выпады 3×8 на ногу','Сгибания ног 3×10','Гиперэкстензия с весом 3×12','Переноска груза в одной руке 3×30 м на сторону'],unlock:'Последние 2 тренировки «Низ» чистые + боль в спине до 2/10 две недели'},
+        {name:'Тяжёлый блок',items:['Гакк-присед: топ-сет на 3 повтора на RPE 8, затем 4×4 с весом на 10% меньше','Тяга с трэп-грифом 3×4 на RPE 7–8','Выпады в ходьбе 3×10 на ногу','Сгибания ног 3×10','Гиперэкстензия с весом 3×12','Переноска груза в одной руке 3×40 м на сторону'],unlock:'Последние 2 тренировки «Низ» чистые + боль в спине до 2/10 две недели'},
+        {name:'Крепкая спина',items:['Гакк-присед: топ-сет на 3 повтора на RPE 8–9, затем 3×3','Тяга с трэп-грифом 3×3 на RPE 8','Остальное как в P5'],unlock:'Цель: 4 недели на P6 с болью в спине до 2/10'}
       ],
       cross:[
-        {name:'3 круга',items:['3 круга, отдых 2 мин','10 гоблет-приседаний · 10 отжиманий · 10 тяг гантели одной рукой на каждую сторону · 30 м прогулки фермера · 1 мин на велотренажёре'],unlock:'2 полные тренировки на RPE 7 или легче'},
+        {name:'3 круга',items:['3 круга, отдых 2 мин','10 гакк-приседаний · 20–30 отжиманий на кулаках · 15 тяг в тренажёре + 15 шрагов · 20 выпадов с гантелями · 30 м прогулки фермера'],unlock:'2 полные тренировки на RPE 7 или легче'},
         {name:'4 круга',items:['4 круга, отдых 90 с','Круг из P1 + 15 махов гирей + 30 м переноски груза в одной руке на каждую сторону'],unlock:'2 полные тренировки на RPE 7 или легче'},
-        {name:'EMOM 20',items:['EMOM 20 мин по кругу (каждую минуту — следующее упражнение)','12 махов гирей · 12 отжиманий · 12 кал на гребном тренажёре · 40 м прогулки фермера'],unlock:'Все 20 минут выдержаны, 2 тренировки подряд'},
-        {name:'AMRAP 15',items:['AMRAP 15 мин (максимум кругов)','10 зашагиваний на тумбу с весом · 10 жимов гантелей · 8 подтягиваний · 12 кал на велотренажёре','Считай круги'],unlock:'На 1 полный круг больше, чем в первой тренировке P4'},
+        {name:'EMOM 20',items:['EMOM 20 мин по кругу (каждую минуту — следующее упражнение)','12 махов гирей · 15 отжиманий на кулаках · 12 кал на гребном тренажёре (или 20 выпадов) · 40 м прогулки фермера'],unlock:'Все 20 минут выдержаны, 2 тренировки подряд'},
+        {name:'AMRAP 15',items:['AMRAP 15 мин (максимум кругов)','10 зашагиваний на тумбу с весом · 10 жимов гантелей · 8 подтягиваний · 20 выпадов','Считай круги'],unlock:'На 1 полный круг больше, чем в первой тренировке P4'},
         {name:'Бокс ×5',items:['5 раундов по 3 мин, отдых 1 мин','Каждый раунд: 1 мин бой с тенью · 1 мин махи гирей · 1 мин переноска или сани'],unlock:'5 раундов, гиря ни разу не на полу, 2 тренировки подряд'},
         {name:'Бокс ×6',items:['6 раундов, тот же формат','Боксёрский мешок с бинтами, если есть'],unlock:'Цель: 6 раундов в одном темпе'}
+      ],
+      arms:[
+        {name:'База',items:['Подъём EZ-штанги на бицепс 3×10–12','Молотки 3×10–12','Разгибания на блоке 3×12–15','Разгибания из-за головы на блоке 3×12–15','Планка RKC 3×20 с'],unlock:'Верх диапазона повторов во всех подходах, 2 тренировки подряд'},
+        {name:'Объём',items:['Подъём EZ-штанги 4×10–12','Сгибания с гантелями на наклонной скамье 3×10–12','Разгибания на блоке 4×10–12','Разгибания из-за головы на блоке 3×10–12','Планка RKC 3×30 с'],unlock:'Верх диапазона повторов во всех подходах, 2 тренировки подряд'},
+        {name:'Нагрузка',items:['Подъём EZ-штанги 4×8–10','Молотки 3×8–10','Французский жим EZ-штанги 3×10–12, лёгкий, локтям комфортно','Разгибания на блоке 3×10–12','Подъёмы коленей в висе 3×10, без раскачки'],unlock:'Верх диапазона повторов во всех подходах, 2 тренировки подряд'},
+        {name:'Тяжёлый блок',items:['Строгий подъём штанги на бицепс 4×6–8','Молотки 3×8–10','Французский жим EZ-штанги 4×8–10','Разгибания из-за головы на блоке 3×10–12','Подъёмы коленей в висе 3×12, без раскачки'],unlock:'Верх диапазона повторов во всех подходах, 2 тренировки подряд'},
+        {name:'Сила',items:['Строгий подъём штанги 5×5–6','Сгибания с гантелями на наклонной скамье 3×8–10','Французский жим EZ-штанги 4×6–8','Разгибания на блоке 3×10–12','Подъёмы коленей в висе 3×15, без раскачки'],unlock:'Верх диапазона повторов во всех подходах, 2 тренировки подряд'},
+        {name:'Пик',items:['Строгий подъём штанги: топ-сет на 5 повторов на RPE 8, затем 3×6','Французский жим EZ-штанги: топ-сет на 6 повторов на RPE 8, затем 3×8','Молотки и разгибания на блоке 3×10–12','Подъёмы коленей в висе 3×15'],test:'Твой топ-сет в строгом подъёме: 5 повторов на RPE 8.',unlock:'Цель: строгий подъём 60 кг × 5 на RPE 8 или легче (e1RM ≈ 74)'}
       ]
     }
   }
@@ -652,30 +706,28 @@ var ENGINE=(function(){
   function criteria(type,L,d,ctx){
     const items=[],lvl=L.level,goal=lvl===6,list=L.list;
     if(!goal){const days=d-L.since;items.push({label:tr('c.minDays'),ok:days>=CFG.minDays,val:tr('v.days',{n:Math.max(0,Math.min(days,CFG.minDays)),of:CFG.minDays})});}
-    if(type==='muscu'){const ok=d>ctx.pecUntil;items.push({label:tr('c.noPec'),ok:ok,val:ok?'':tr('v.resumes',{s:fmtShort(ctx.pecUntil+1)})});}
+    else if(type==='lower'){const days=d-L.since;items.push({label:tr('c.weeks4'),ok:days>=28,val:tr('v.days',{n:Math.max(0,Math.min(days,28)),of:28})});}
+    if(type==='upper'){const ok=d>ctx.pecUntil;items.push({label:tr('c.noPec'),ok:ok,val:ok?'':tr('v.resumes',{s:fmtShort(ctx.pecUntil+1)})});}
     const sok=d>ctx.stopUntil;
     items.push({label:tr('c.noStop'),ok:sok,val:sok?'':tr('v.resumes',{s:fmtShort(ctx.stopUntil+1)})});
-    if(type==='muscu'){
+    const back=(days,max,minN,key)=>{const b=backAvg(ctx.daily,d,days);items.push({label:tr(key),ok:b.n>=minN&&b.avg<=max,val:b.n?nf(r1(b.avg))+'/10':tr('v.logDaily')});};
+    if(type==='upper'){
       if(lvl===1){
         const base=list.find(s=>testE1(s)!==null&&dn(s.date)-L.since>=14);
         items.push({label:tr('c.baseline'),ok:!!base,val:base?fmtSet(base.data.test):''});
-        const b=backAvg(ctx.daily,d,7);
-        items.push({label:tr('c.back3'),ok:b.n>=3&&b.avg<=3,val:b.n?nf(r1(b.avg))+'/10':tr('v.logDaily')});
         items.push({label:tr('c.noPecP1'),ok:!list.some(s=>s.flags&&s.flags.pec),val:''});
       }else{
         const thr=goal?CFG.goal:CFG.thr[lvl],maxR=goal?9:8;let best=null;
         list.forEach(s=>{const e=testE1(s);if(e!==null&&s.data.test.rpe<=maxR&&(best===null||e>best))best=e;});
         items.push({label:tr('c.bench',{thr:thr,r:maxR}),ok:best!==null&&best>=thr,val:best!==null?tr('v.best',{x:nf(r1(best))}):tr('v.noSet')});
-        if(lvl===3){const b=backAvg(ctx.daily,d,14);items.push({label:tr('c.back2'),ok:b.n>=5&&b.avg<=2,val:b.n?nf(r1(b.avg))+'/10':tr('v.logDaily')});}
       }
-    }else if(type==='cardio'){
-      if(lvl<=3){const r=lastTwo(list,s=>s.data.full&&s.data.talk);items.push({label:tr('c.talk2'),ok:r.ok,val:r.val});}
-      else if(lvl<=5){const r=lastTwo(list,s=>s.data.full&&s.data.recov);items.push({label:tr('c.recov2'),ok:r.ok,val:r.val});}
-      else{
-        const s=list[list.length-1],b=s&&s.data.blocks;let ok=false,val=tr('v.logBlocks');
-        if(Array.isArray(b)&&b.length===4&&b.every(x=>isNum(x)&&x>0)){const mx=Math.max.apply(null,b),mn=Math.min.apply(null,b),sp=(mx-mn)/mx;ok=sp<=0.05+1e-9;val=tr('v.spread',{x:nf((sp*100).toFixed(1))});}
-        items.push({label:tr('c.blocks'),ok:ok,val:val});
-      }
+    }else if(type==='lower'){
+      const r=lastTwo(list,s=>s.data.clean);items.push({label:tr('c.clean2'),ok:r.ok,val:r.val});
+      if(goal)back(28,2,14,'c.back28');else if(lvl<=2)back(7,3,3,'c.back3');else back(14,2,5,'c.back2');
+    }else if(type==='arms'){
+      if(!goal){const r=lastTwo(list,s=>s.data.top);items.push({label:tr('c.top2'),ok:r.ok,val:r.val});}
+      else{let best=null;list.forEach(s=>{const e=testE1(s);if(e!==null&&s.data.test.rpe<=8&&(best===null||e>best))best=e;});
+        items.push({label:tr('c.curl'),ok:best!==null&&best>=CFG.curlGoal-1e-6,val:best!==null?tr('v.best',{x:nf(r1(best))}):tr('v.noSet')});}
     }else{
       if(lvl<=2){const r=lastTwo(list,s=>s.data.rpe7);items.push({label:tr('c.rpe7'),ok:r.ok,val:r.val});}
       else if(lvl===3){const r=lastTwo(list,s=>s.data.emom);items.push({label:tr('c.emom'),ok:r.ok,val:r.val});}
@@ -702,7 +754,7 @@ var ENGINE=(function(){
       if(any)logged++;
     }
     const ss=sessions.filter(s=>{const d=dn(s.date);return d>=mon&&d<=sun;});
-    let bench=null;ss.forEach(s=>{if(s.type==='muscu'){const e=testE1(s);if(e!==null&&(bench===null||e>bench))bench=e;}});
+    let bench=null;ss.forEach(s=>{if(s.type==='upper'){const e=testE1(s);if(e!==null&&(bench===null||e>bench))bench=e;}});
     return {mon:mon,sun:sun,logged:logged,sleep:sln?sl/sln:null,m3:m3,m4:m4,whisky:wh,back:bkn?bk/bkn:null,weight:wn?w/wn:null,sessions:ss.length,flag:ss.some(s=>anyFlag(s.flags)),bench:bench};
   }
 
@@ -732,18 +784,20 @@ var ENGINE=(function(){
   }
 
   function compute(st,todayS){
-    const today=dn(todayS),start=dn(st.profile.startDate),daily=st.daily||{};
-    const sessions=(st.sessions||[]).filter(s=>{const d=dn(s.date);return d>=start&&d<=today&&TYPES.indexOf(s.type)>=0;})
+    const today=dn(todayS),start=dn(st.profile.startDate),daily=st.daily||{},v2=Math.max(start,dn(V2_DATE));
+    const sessions=(st.sessions||[]).map(s=>LEGACY_MAP[s.type]?Object.assign({},s,{type:LEGACY_MAP[s.type]}):s)
+      .filter(s=>{const d=dn(s.date);return d>=start&&d<=today&&(TYPES.indexOf(s.type)>=0||EXTRA.indexOf(s.type)>=0);})
       .sort((a,b)=>dn(a.date)-dn(b.date)||(a.t||0)-(b.t||0));
-    const L={};TYPES.forEach(ty=>{L[ty]={level:1,since:start,list:[],goal:false,goalDate:null};});
+    const L={};TYPES.forEach(ty=>{L[ty]={level:1,since:NEW_TYPES.indexOf(ty)>=0?v2:start,list:[],goal:false,goalDate:null};});
     const ctx={pecUntil:-1e9,stopUntil:-1e9,daily:daily},events=[],freq={level:3,since:start},weeks=[],levelOf=new Map(),byDay=new Map();
     sessions.forEach(s=>{const d=dn(s.date);if(!byDay.has(d))byDay.set(d,[]);byDay.get(d).push(s);});
     let lastW=null;
     for(let d=start;d<=today;d++){
       (byDay.get(d)||[]).forEach(s=>{
-        const Lt=L[s.type];levelOf.set(s.id,Lt.level);Lt.list.push(s);
         if(s.flags&&s.flags.pec)ctx.pecUntil=Math.max(ctx.pecUntil,d+CFG.pauseDays);
         if(hasStop(s.flags))ctx.stopUntil=Math.max(ctx.stopUntil,d+CFG.pauseDays);
+        const Lt=L[s.type];if(!Lt){levelOf.set(s.id,0);return;}
+        levelOf.set(s.id,Lt.level);Lt.list.push(s);
         const c=criteria(s.type,Lt,d,ctx);
         if(c.ok){
           if(Lt.level<6){events.push({d:d,kind:'up',type:s.type,from:Lt.level,to:Lt.level+1});Lt.level++;Lt.since=d;Lt.list=[];}
@@ -766,8 +820,8 @@ var ENGINE=(function(){
       }
     }
     const cur=weekMetrics(wkStart(today),daily,sessions);cur.target=freq.level;cur.prevW=lastW;
-    const last=sessions[sessions.length-1];
-    const nextType=last?TYPES[(TYPES.indexOf(last.type)+1)%3]:'muscu';
+    let lastLoop=null;for(let i=sessions.length-1;i>=0;i--){if(L[sessions[i].type]){lastLoop=sessions[i];break;}}
+    const nextType=lastLoop?TYPES[(TYPES.indexOf(lastLoop.type)+1)%TYPES.length]:'upper';
     return {today:today,start:start,L:L,freq:freq,weeks:weeks,events:events,cur:cur,ctx:ctx,nextType:nextType,levelOf:levelOf,sessions:sessions};
   }
 
@@ -780,7 +834,7 @@ var ENGINE=(function(){
     return {T:T,need:need,streak:streak,curChecks:curChecks,winChecks:T>=5?windowChecks(T,win):[]};
   }
 
-  function freshState(t){return {v:1,profile:{startDate:t,startWeight:81,startWaist:81,height:175},daily:{},sessions:[],meta:{lastBackup:null,created:t}};}
+  function freshState(t){return {v:2,profile:{startDate:t,startWeight:81,startWaist:81,height:175},daily:{},sessions:[],meta:{lastBackup:null,created:t,photos:{}}};}
 
   function generateDemo(todayS){
     const today=dn(todayS),start=today-45,st=freshState(ds(start));
@@ -790,23 +844,24 @@ var ENGINE=(function(){
         back:Math.max(0,Math.min(10,Math.round(3.1-wk*0.3+(rnd()-0.5)*1.2))),weight:Math.round((81+i*0.035+(rnd()-0.5)*0.5)*10)/10};}
     const bench=[[15,105,5,8],[23,107.5,5,8],[29,110,5,8],[36,112.5,5,8],[42,115,5,8]];let k=0;
     for(let d=start;d<today;d++){const i=d-start,w=wday(d);if(!(w===0||w===2||w===4||(w===5&&i>=30)))continue;
-      const type=TYPES[k%3];k++;const s={id:'demo'+i,t:i,date:ds(d),type:type,data:{},flags:{}};
-      if(type==='muscu'){let b=null;bench.forEach(x=>{if(x[0]<=i)b=x;});if(b)s.data.test={kg:b[1],reps:b[2],rpe:b[3]};}
-      else if(type==='cardio'){s.data.full=true;s.data.talk=true;s.data.recov=true;}
+      const type=TYPES[k%TYPES.length];k++;const s={id:'demo'+i,t:i,date:ds(d),type:type,data:{},flags:{}};
+      if(type==='upper'){let b=null;bench.forEach(x=>{if(x[0]<=i)b=x;});if(b)s.data.test={kg:b[1],reps:b[2],rpe:b[3]};}
+      else if(type==='lower')s.data.clean=true;
+      else if(type==='arms')s.data.top=true;
       else{s.data.rpe7=true;s.data.emom=true;}
       st.sessions.push(s);}
-    st.meta.lastBackup=ds(today-2);
+    st.meta.lastBackup=ds(today-2);st.meta.photos={base:ds(start+2)};
     return st;
   }
 
-  return {CFG:CFG,TYPES:TYPES,FREQ_NEED:FREQ_NEED,WT:WT,STR:STR,D:D,V:V,tr:tr,setLang:setLang,getLang:getLang,withLang:withLang,nf:nf,plRu:plRu,scramble:scramble,pct:pct,e1rm:e1rm,dn:dn,ds:ds,wday:wday,wkStart:wkStart,isNum:isNum,r1:r1,fmtDay:fmtDay,fmtShort:fmtShort,fmtH:fmtH,signed:signed,fmtSet:fmtSet,testE1:testE1,hasStop:hasStop,anyFlag:anyFlag,allOk:allOk,criteria:criteria,weekMetrics:weekMetrics,weekChecks:weekChecks,windowChecks:windowChecks,compute:compute,freqView:freqView,freshState:freshState,generateDemo:generateDemo};
+  return {CFG:CFG,TYPES:TYPES,NEW_TYPES:NEW_TYPES,LEGACY_MAP:LEGACY_MAP,V2_DATE:V2_DATE,FREQ_NEED:FREQ_NEED,WT:WT,STR:STR,D:D,V:V,tr:tr,setLang:setLang,getLang:getLang,withLang:withLang,nf:nf,plRu:plRu,scramble:scramble,pct:pct,e1rm:e1rm,dn:dn,ds:ds,wday:wday,wkStart:wkStart,isNum:isNum,r1:r1,fmtDay:fmtDay,fmtShort:fmtShort,fmtH:fmtH,signed:signed,fmtSet:fmtSet,testE1:testE1,hasStop:hasStop,anyFlag:anyFlag,allOk:allOk,criteria:criteria,weekMetrics:weekMetrics,weekChecks:weekChecks,windowChecks:windowChecks,compute:compute,freqView:freqView,freshState:freshState,generateDemo:generateDemo};
 })();
 /*ENGINE-END*/
 
 const E=ENGINE;
 const {CFG,TYPES,dn,isNum,r1,nf,fmtDay,fmtShort,fmtH,signed,fmtSet,testE1,anyFlag,allOk,criteria,compute,freqView,freshState,generateDemo}=E;
 const tr=E.tr,V=E.V;
-const nm=x=>V('names')[x];
+const nm=x=>V('names')[x]||x;
 const lvls=x=>V('levels')[x];
 const KEY='yns1-comeback-v1',UIKEY='yns1-comeback-tab',LANGKEY='yns1-comeback-lang';
 const TABS=['today','progress','plan','data'];
@@ -815,7 +870,9 @@ const FLAG_KEYS=['pec','vision','leg','chest','asthma','headache'];
 const IS_TOP=(()=>{try{return window.top===window.self;}catch(e){return false;}})();
 const IS_IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const IS_STANDALONE=window.navigator.standalone===true||(!!window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
-const NEW_URL='';
+const NEW_URL='https://arthurdefromont-alt.github.io/comeback/';
+const COACH=(location.hash||'').slice(1)==='coach';
+const PHOTO_WIN={m3:[84,112],m6:[175,203]};
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -848,6 +905,7 @@ function applyCredit(st){
 }
 let S=applyCredit(loadState()||freshState(todayStr()));
 if(!S.meta)S.meta={lastBackup:null};
+if(!S.meta.photos)S.meta.photos={};
 let REAL=null,demo=false,C=null,renderedDay=null;
 const ui={logOpen:false,logType:null,logDate:null,ciDate:null,flash:null};
 let persistAsked=false;
@@ -878,10 +936,20 @@ function evKey(ev){return [ev.kind,ev.type||'',ev.from||'',ev.to||'',ev.d].join(
 function riskText(lvl,strong){const a=tr('fq.risk1',{l:lvl}),b=tr('fq.risk2',{m:lvl-1});return (strong?'<strong>'+esc(a)+'</strong>':esc(a))+' '+esc(b);}
 function detail(s){
   const d=s.data||{};
-  if(s.type==='muscu'){const e=testE1(s);return e!==null?fmtSet(d.test)+' · e1RM '+nf(r1(e)):tr('d.noTest');}
+  if(s.type==='upper'){const e=testE1(s);return e!==null?fmtSet(d.test)+' · e1RM '+nf(r1(e)):tr('d.noTest');}
+  if(s.type==='lower')return tr(d.clean?'d.clean':'d.notClean');
+  if(s.type==='arms'){const p=[tr(d.top?'d.top':'d.notTop')],e=testE1(s);if(e!==null)p.push(fmtSet(d.test)+' · e1RM '+nf(r1(e)));return p.join(' · ');}
   if(s.type==='cardio'){const p=[tr(d.full?'d.full':'d.cut')];if(d.talk)p.push(tr('d.talk'));if(d.recov)p.push(tr('d.recov'));if(Array.isArray(d.blocks))p.push(tr('d.blocks',{b:d.blocks.map(x=>nf(x)).join(' / ')}));return p.join(' · ');}
   const p=[];if(d.rpe7)p.push(tr('d.rpe7'));if(d.emom)p.push(tr('d.emom'));if(isNum(d.rounds))p.push(tr('d.rounds',{n:d.rounds}));if(d.held)p.push(tr('d.held'));if(d.pace6)p.push(tr('d.pace6'));
   return p.join(' · ')||tr('d.logged');
+}
+function photoDue(){
+  const ph=S.meta.photos||{},day=C.today-C.start;
+  if(day<0)return null;
+  if(!ph.base)return 'base';
+  if(day>=PHOTO_WIN.m3[0]&&day<=PHOTO_WIN.m3[1]&&!ph.m3)return 'm3';
+  if(day>=PHOTO_WIN.m6[0]&&day<=PHOTO_WIN.m6[1]&&!ph.m6)return 'm6';
+  return null;
 }
 
 function render(){C=compute(S,todayStr());renderedDay=todayStr();renderChrome();renderStatus();renderToday();renderProgress();renderPlan();renderData();}
@@ -913,16 +981,21 @@ function renderAlerts(){
   C.events.filter(ev=>td-ev.d<=3).slice(-3).reverse().forEach(ev=>{
     a.push('<div class="alert win"><span class="three" aria-hidden="true"><i></i><i></i><i></i></span><div><strong>'+esc(eventText(ev))+'</strong><br><span class="small">'+esc(fmtDay(ev.d))+'</span></div></div>');
   });
+  if(!demo&&td>=dn(E.V2_DATE)&&td-dn(E.V2_DATE)<=7&&S.sessions.some(s=>s.type==='muscu'||s.type==='cardio'))a.push('<div class="alert info"><p>'+tr('a.v2')+'</p></div>');
   if(C.ctx.stopUntil>=td)a.push('<div class="alert stop"><p>'+tr('a.stop',{d:esc(fmtDay(C.ctx.stopUntil+1)),s:esc(fmtShort(C.ctx.stopUntil+1))})+'</p></div>');
   if(C.ctx.pecUntil>=td)a.push('<div class="alert stop"><p>'+tr('a.pec',{d:esc(fmtDay(C.ctx.pecUntil+1)),s:esc(fmtShort(C.ctx.pecUntil+1))})+'</p></div>');
   TYPES.forEach(ty=>{const L=C.L[ty];if(!L.goal&&td-L.since>=CFG.stuck)a.push('<div class="alert warn"><p>'+tr('a.stuck',{type:esc(nm(ty)),l:L.level})+'</p></div>');});
   const lvl=C.freq.level,since=C.weeks.filter(w=>w.mon>=C.freq.since),lw=since[since.length-1];
   if(lvl>3&&lw&&lw.pass===false)a.push('<div class="alert warn"><p>'+riskText(lvl,true)+'</p></div>');
+  const due=photoDue();
+  if(!demo&&due)a.push('<div class="alert info"><p>'+tr('a.photos.'+due)+'</p><p class="small">'+esc(tr('pl.poses'))+'</p><div class="row"><button type="button" class="btn ghost" data-act="photos-done" data-k="'+due+'">'+esc(tr('a.photosDone'))+'</button></div></div>');
   const n=Object.keys(S.daily).length+S.sessions.length,lb=S.meta.lastBackup;
   if(!demo&&n>=5&&(!lb||td-dn(lb)>=7))a.push('<div class="alert info"><p>'+tr('a.backup')+' <button type="button" class="link" data-act="goto" data-to="data">'+esc(tr('a.backupBtn'))+'</button></p></div>');
   if(!demo&&n===0)a.push('<div class="alert info"><p><strong>'+esc(tr('a.startTitle'))+'</strong></p><ol><li>'+esc(tr('a.start1'))+'</li><li>'+esc(tr('a.start2'))+'</li><li>'+esc(tr('a.start3'))+'</li></ol></div>');
   $('#t-alerts').innerHTML=a.join('');
 }
+
+function routineBlock(){return '<div class="routine"><span class="eyebrow">'+esc(tr('routineTitle'))+'</span><span>'+esc(tr('routine'))+'</span></div>';}
 
 function renderNext(){
   const type=ui.logType||C.nextType,L=C.L[type],lvl=L.level,def=lvls(type)[lvl-1],name=nm(type);
@@ -930,6 +1003,7 @@ function renderNext(){
   $('#t-next').innerHTML='<article class="card next">'+
     '<div class="row between"><span class="eyebrow">'+esc(tr(other?'n.instead':'n.next'))+'</span><span class="chip">P'+lvl+' · '+esc(def.name)+'</span></div>'+
     '<div class="next-type'+(name.length>9?' long':'')+'">'+esc(name)+'</div>'+
+    routineBlock()+
     '<ul class="ex">'+def.items.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
     '<p class="cue">'+esc(V('cues')[type])+'</p>'+
     '<p class="unlock"><span class="eyebrow">'+esc(tr('n.unlock'))+'</span>'+esc(def.unlock)+'</p>'+
@@ -938,24 +1012,22 @@ function renderNext(){
   '</article>';
 }
 
+function testFields(legend,hint){
+  return '<fieldset class="group"><legend>'+esc(legend)+'</legend><p class="hint">'+esc(hint)+'</p><div class="grid3">'+
+    '<div class="field"><label for="lg-kg">'+esc(tr('f.kg'))+'</label><input class="input" id="lg-kg" inputmode="decimal" autocomplete="off"></div>'+
+    '<div class="field"><label for="lg-reps">'+esc(tr('f.reps'))+'</label><select class="input" id="lg-reps"><option value=""></option>'+[1,2,3,4,5,6,7,8,9,10].map(r=>'<option value="'+r+'">'+r+'</option>').join('')+'</select></div>'+
+    '<div class="field"><label for="lg-rpe">'+esc(tr('f.rpe'))+'</label><select class="input" id="lg-rpe"><option value=""></option>'+[6,6.5,7,7.5,8,8.5,9,9.5,10].map(r=>'<option value="'+r+'">'+esc(nf(r))+'</option>').join('')+'</select></div></div>'+
+    '<p class="hint">'+esc(tr('f.rpeHint'))+'</p></fieldset>';
+}
+
 function logForm(type,lvl){
   const td=todayStr();
   let h='<form class="form" id="log-form" novalidate>'+
     '<div class="grid2"><div class="field"><label for="lg-date">'+esc(tr('f.date'))+'</label><input class="input" type="date" id="lg-date" value="'+esc(ui.logDate||td)+'" max="'+td+'" min="'+esc(S.profile.startDate)+'"></div>'+
     '<div class="field"><label for="lg-type">'+esc(tr('f.session'))+'</label><select class="input" id="lg-type">'+TYPES.map(x=>'<option value="'+x+'"'+(x===type?' selected':'')+'>'+esc(nm(x))+' · P'+C.L[x].level+'</option>').join('')+'</select></div></div>';
-  if(type==='muscu'){
-    h+='<fieldset class="group"><legend>'+esc(tr('f.benchLegend'))+'</legend><p class="hint">'+esc(lvls('muscu')[lvl-1].test)+'</p><div class="grid3">'+
-      '<div class="field"><label for="lg-kg">'+esc(tr('f.kg'))+'</label><input class="input" id="lg-kg" inputmode="decimal" autocomplete="off"></div>'+
-      '<div class="field"><label for="lg-reps">'+esc(tr('f.reps'))+'</label><select class="input" id="lg-reps"><option value=""></option>'+[1,2,3,4,5,6,7,8,9,10].map(r=>'<option value="'+r+'">'+r+'</option>').join('')+'</select></div>'+
-      '<div class="field"><label for="lg-rpe">'+esc(tr('f.rpe'))+'</label><select class="input" id="lg-rpe"><option value=""></option>'+[6,6.5,7,7.5,8,8.5,9,9.5,10].map(r=>'<option value="'+r+'">'+esc(nf(r))+'</option>').join('')+'</select></div></div>'+
-      '<p class="hint">'+esc(tr('f.rpeHint'))+'</p></fieldset>';
-  }
-  if(type==='cardio'){
-    h+=check('lg-full',tr('f.full'));
-    if(lvl<=3)h+=check('lg-talk',tr('f.talk'));
-    else if(lvl<=5)h+=check('lg-recov',tr('f.recov'));
-    else h+='<fieldset class="group"><legend>'+esc(tr('f.blocksLegend'))+'</legend><p class="hint">'+esc(tr('f.blocksHint'))+'</p><div class="grid4">'+[1,2,3,4].map(i=>'<div class="field"><label for="lg-b'+i+'">'+esc(tr('f.block',{i:i}))+'</label><input class="input" id="lg-b'+i+'" inputmode="decimal" autocomplete="off"></div>').join('')+'</div></fieldset>';
-  }
+  if(type==='upper')h+=testFields(tr('f.benchLegend'),lvls('upper')[lvl-1].test);
+  if(type==='lower')h+=check('lg-clean',tr('f.clean'));
+  if(type==='arms'){h+=check('lg-top',tr('f.top'));if(lvl===6)h+=testFields(tr('f.curlLegend'),lvls('arms')[5].test);}
   if(type==='cross'){
     if(lvl<=2)h+=check('lg-rpe7',tr('f.rpe7'));
     else if(lvl===3)h+=check('lg-emom',tr('f.emom'));
@@ -1025,8 +1097,8 @@ function historyList(){
   if(!items.length)return '<article class="card"><h2>'+esc(tr('h.title'))+'</h2><p class="muted">'+esc(tr('h.empty'))+'</p></article>';
   const li=items.slice(0,40).map(it=>{
     if(it.k===0)return '<li class="ev"><span class="mono small">'+esc(fmtShort(it.d))+'</span><strong>'+esc(eventText(it.ev))+'</strong></li>';
-    const s=it.s,fl=flagNames(s.flags);
-    return '<li><span class="mono small">'+esc(fmtShort(it.d))+'</span><div class="li-body"><span><b>'+esc(nm(s.type))+' P'+(C.levelOf.get(s.id)||'?')+'</b> <span class="muted">'+esc(detail(s))+'</span></span>'+(fl.length?'<span class="flagtxt">'+esc(fl.join(', '))+'</span>':'')+'</div><button type="button" class="link danger" data-act="del" data-id="'+esc(s.id)+'">'+esc(tr('h.delete'))+'</button></li>';
+    const s=it.s,fl=flagNames(s.flags),lv=C.levelOf.get(s.id);
+    return '<li><span class="mono small">'+esc(fmtShort(it.d))+'</span><div class="li-body"><span><b>'+esc(nm(s.type))+(lv?' P'+lv:'')+'</b> <span class="muted">'+esc(detail(s))+'</span></span>'+(fl.length?'<span class="flagtxt">'+esc(fl.join(', '))+'</span>':'')+'</div><button type="button" class="link danger" data-act="del" data-id="'+esc(s.id)+'">'+esc(tr('h.delete'))+'</button></li>';
   }).join('');
   return '<article class="card"><h2>'+esc(tr('h.title'))+'</h2><ul class="log">'+li+'</ul></article>';
 }
@@ -1034,7 +1106,7 @@ function historyList(){
 function levelList(ty){
   const L=C.L[ty],cur=L.level,tags=V('pl.tags');
   return '<ol class="levels">'+lvls(ty).map((l,i)=>{
-    const n=i+1,locked=!L.goal&&n>cur+1;
+    const n=i+1,locked=!COACH&&!L.goal&&n>cur+1;
     const tag=L.goal||n<cur?'<span class="tag done">'+esc(tags.done)+'</span>':n===cur?'<span class="tag now">'+esc(tags.now)+'</span>':n===cur+1?'<span class="tag next">'+esc(tags.next)+'</span>':'<span class="tag locked">'+esc(tags.locked)+'</span>';
     if(locked)return '<li class="locked"><div class="lv-head"><b class="mono">P'+n+'</b><span class="blurred" aria-hidden="true">'+esc(E.scramble(l.name))+'</span>'+tag+'</div>'+
       '<div class="blurred" aria-hidden="true" inert><ul class="ex">'+l.items.map(x=>'<li>'+esc(E.scramble(x))+'</li>').join('')+'</ul><p class="small">'+esc(E.scramble(l.unlock))+'</p></div>'+
@@ -1043,20 +1115,32 @@ function levelList(ty){
   }).join('')+'</ol>';
 }
 
+function photosCard(){
+  const ph=S.meta.photos||{},rows=[['base',0],['m3',PHOTO_WIN.m3[0]],['m6',PHOTO_WIN.m6[0]]];
+  const label={base:tr('pl.photoBase'),m3:tr('pl.photoM3'),m6:tr('pl.photoM6')};
+  return '<article class="card"><h2>'+esc(tr('pl.photosTitle'))+'</h2><p class="small">'+esc(tr('pl.poses'))+'</p><ul class="photos">'+rows.map(r=>{
+    const done=ph[r[0]],when=done?tr('pl.photoDone',{d:fmtShort(dn(done))}):(r[0]==='base'?tr('pl.photoNow'):tr('pl.photoFrom',{d:fmtShort(C.start+r[1])}));
+    return '<li class="'+(done?'done':'')+'"><b>'+esc(label[r[0]])+'</b><span class="mono small">'+esc(when)+'</span></li>';
+  }).join('')+'</ul></article>';
+}
+
 function renderPlan(){
   const li=a=>'<ul class="bullets">'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
   const cues=V('cues');
   $('#plan').innerHTML='<div class="stack">'+
     '<aside class="note"><span class="eyebrow">'+esc(tr('noteEyebrow'))+'</span><p>'+esc(tr('note'))+'</p></aside>'+
     '<article class="card"><h2>'+esc(tr('pl.how'))+'</h2>'+li(V('pl.howList'))+'</article>'+
+    '<article class="card"><h2>'+esc(tr('routineTitle'))+'</h2><p>'+esc(tr('routine'))+'</p><p class="hint">'+esc(tr('pl.routineWhy'))+'</p></article>'+
     '<article class="card"><h2>'+esc(tr('pl.safety'))+'</h2><p class="small">'+esc(tr('pl.safetyLead'))+'</p>'+li(V('pl.safetyList'))+'</article>'+
-    '<article class="card"><h2>'+esc(nm('muscu'))+'</h2><p class="small">'+esc(cues.muscu)+'</p>'+levelList('muscu')+'<p class="hint">'+esc(tr('pl.muscuHint'))+'</p></article>'+
-    '<article class="card"><h2>'+esc(nm('cardio'))+'</h2><p class="small">'+esc(cues.cardio)+'</p>'+levelList('cardio')+'</article>'+
+    '<article class="card"><h2>'+esc(nm('upper'))+'</h2><p class="small">'+esc(cues.upper)+'</p>'+levelList('upper')+'<p class="hint">'+esc(tr('pl.upperHint'))+'</p></article>'+
+    '<article class="card"><h2>'+esc(nm('lower'))+'</h2><p class="small">'+esc(cues.lower)+'</p>'+levelList('lower')+'</article>'+
     '<article class="card"><h2>'+esc(nm('cross'))+'</h2><p class="small">'+esc(tr('pl.crossLead'))+'</p>'+levelList('cross')+'</article>'+
+    '<article class="card"><h2>'+esc(nm('arms'))+'</h2><p class="small">'+esc(cues.arms)+'</p>'+levelList('arms')+'</article>'+
     '<article class="card"><h2>'+esc(tr('fq.title'))+'</h2><div class="tablewrap"><table class="freq-table"><thead><tr>'+V('pl.freqCols').map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+
       V('pl.freqRows').map(r=>'<tr><td class="mono">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>').join('')+
     '</tbody></table></div><p class="hint">'+esc(tr('pl.freqHint'))+'</p></article>'+
     '<article class="card"><h2>'+esc(tr('pl.recovery'))+'</h2>'+li(V('pl.recoveryList'))+'</article>'+
+    photosCard()+
   '</div>';
 }
 
@@ -1084,12 +1168,16 @@ function summaryEn(){
     const ws=win.filter(w=>w.weight!==null);
     if(ws.length){const a=ws[0].weight,b=ws[ws.length-1].weight;
       lines.push('Weight: '+(ws.length>1?r1(a)+' → '+r1(b)+' kg ('+signed(b-a,1)+')':r1(a)+' kg')+(waist!==null?' · waist '+waist+' cm':''));}
-    const tests=C.sessions.filter(s=>s.type==='muscu'&&dn(s.date)>=from&&testE1(s)!==null);
-    if(tests.length){const first=tests[0];let best=first;tests.forEach(s=>{if(testE1(s)>testE1(best))best=s;});
-      lines.push('Bench: '+fmtSet(first.data.test)+' (e1RM '+r1(testE1(first))+')'+(best!==first?' → best '+fmtSet(best.data.test)+' (e1RM '+r1(testE1(best))+')':''));}
+    [['upper','Bench'],['arms','Strict curl']].forEach(x=>{
+      const tests=C.sessions.filter(s=>s.type===x[0]&&dn(s.date)>=from&&testE1(s)!==null);
+      if(tests.length){const first=tests[0];let best=first;tests.forEach(s=>{if(testE1(s)>testE1(best))best=s;});
+        lines.push(x[1]+': '+fmtSet(first.data.test)+' (e1RM '+r1(testE1(first))+')'+(best!==first?' → best '+fmtSet(best.data.test)+' (e1RM '+r1(testE1(best))+')':''));}
+    });
     const fl=C.sessions.filter(s=>dn(s.date)>=from&&anyFlag(s.flags));
     lines.push('Stop signals: '+(fl.length?fl.map(s=>fmtShort(dn(s.date))+' '+flagNames(s.flags).join(', ')).join('; '):'none'));
   }
+  const ph=S.meta.photos||{};
+  lines.push('Photos: start '+(ph.base?'done '+fmtShort(dn(ph.base)):'not yet')+' · month 3 '+(ph.m3?'done':'–')+' · month 6 '+(ph.m6?'done':'–'));
   TYPES.forEach(ty=>{const Lt=L[ty];if(Lt.goal){lines.push(nm(ty)+': goal reached');return;}
     const miss=criteria(ty,Lt,C.today,C.ctx).items.filter(i=>!i.ok).map(i=>i.label);
     lines.push(nm(ty)+' next: '+(miss.length?miss[0]:'ready, unlocks next session'));});
@@ -1100,7 +1188,7 @@ function summaryText(){return E.withLang('en',summaryEn);}
 function renderData(){
   const p=S.profile,lb=S.meta.lastBackup,pv=x=>x==null?'':esc(nf(x));
   $('#data').innerHTML='<div class="stack">'+
-    '<article class="card"><h2>'+esc(tr('dt.sumTitle'))+'</h2><p class="hint">'+esc(tr('dt.sumHint'))+'</p><textarea class="input" id="sum-text" rows="9">'+esc(summaryText())+'</textarea><div class="row"><button type="button" class="btn" data-act="copy-sum">'+esc(tr('dt.copySum'))+'</button></div></article>'+
+    '<article class="card"><h2>'+esc(tr('dt.sumTitle'))+'</h2><p class="hint">'+esc(tr('dt.sumHint'))+'</p><textarea class="input" id="sum-text" rows="10">'+esc(summaryText())+'</textarea><div class="row"><button type="button" class="btn" data-act="copy-sum">'+esc(tr('dt.copySum'))+'</button></div></article>'+
     '<article class="card"><h2>'+esc(tr('dt.backupTitle'))+'</h2><p class="hint">'+esc(tr('dt.backupHint'))+'</p><p class="small">'+esc(tr('dt.last'))+' <b id="last-backup">'+esc(lb?fmtDay(dn(lb)):tr('dt.never'))+'</b></p><div class="row"><button type="button" class="btn" data-act="copy-backup">'+esc(tr('dt.copyBackup'))+'</button></div><textarea class="input" id="backup-text" rows="3" hidden></textarea>'+
       '<div class="field"><label for="restore-text">'+esc(tr('dt.restoreLabel'))+'</label><textarea class="input" id="restore-text" rows="3" placeholder="'+esc(tr('dt.restorePh'))+'"></textarea></div><div class="row"><button type="button" class="btn warn" data-act="restore">'+esc(tr('dt.restore'))+'</button></div></article>'+
     '<form class="card" id="setup-form" novalidate><h2>'+esc(tr('dt.startTitle'))+'</h2><p class="hint">'+esc(tr('dt.startHint'))+'</p>'+
@@ -1133,26 +1221,24 @@ function showTab(id){
   window.scrollTo(0,0);
 }
 
+function readTest(min,max){
+  const kg=num($('#lg-kg')&&$('#lg-kg').value),reps=num($('#lg-reps')&&$('#lg-reps').value),rpe=num($('#lg-rpe')&&$('#lg-rpe').value);
+  if(kg===null&&reps===null&&rpe===null)return {ok:true,test:null};
+  if(kg===null||reps===null||rpe===null){toast(tr('tt.fillTest'));return {ok:false};}
+  if(kg<min||kg>max){toast(tr('tt.checkKg'));return {ok:false};}
+  return {ok:true,test:{kg:kg,reps:reps,rpe:rpe}};
+}
+
 function saveLog(){
   const td=todayStr(),date=$('#lg-date').value,type=$('#lg-type').value;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast(tr('tt.pickDate'));return;}
   if(date>td){toast(tr('tt.future'));return;}
   if(date<S.profile.startDate){toast(tr('tt.beforeStart'));return;}
   const lvl=C.L[type].level,s={id:newId(),t:Date.now(),date:date,type:type,data:{},flags:{}};
-  if(type==='muscu'){
-    const kg=num($('#lg-kg').value),reps=num($('#lg-reps').value),rpe=num($('#lg-rpe').value);
-    if(kg!==null||reps!==null||rpe!==null){
-      if(kg===null||reps===null||rpe===null){toast(tr('tt.fillTest'));return;}
-      if(kg<20||kg>400){toast(tr('tt.checkKg'));return;}
-      s.data.test={kg:kg,reps:reps,rpe:rpe};
-    }
-  }else if(type==='cardio'){
-    s.data.full=chk('lg-full');
-    if(lvl<=3)s.data.talk=chk('lg-talk');
-    else if(lvl<=5)s.data.recov=chk('lg-recov');
-    else{const b=[1,2,3,4].map(i=>num($('#lg-b'+i).value));
-      if(b.some(x=>x!==null)){if(b.some(x=>x===null||x<=0)){toast(tr('tt.fillBlocks'));return;}s.data.blocks=b;}}
-  }else{
+  if(type==='upper'){const r=readTest(20,400);if(!r.ok)return;if(r.test)s.data.test=r.test;}
+  else if(type==='lower'){s.data.clean=chk('lg-clean');}
+  else if(type==='arms'){s.data.top=chk('lg-top');if(lvl===6){const r=readTest(10,200);if(!r.ok)return;if(r.test)s.data.test=r.test;}}
+  else{
     if(lvl<=2)s.data.rpe7=chk('lg-rpe7');
     else if(lvl===3)s.data.emom=chk('lg-emom');
     else if(lvl===4){const r=num($('#lg-rounds').value);if(r!==null){if(r<0||r>60||Math.floor(r)!==r){toast(tr('tt.rounds'));return;}s.data.rounds=r;}}
@@ -1162,8 +1248,10 @@ function saveLog(){
   FLAG_KEYS.forEach(k=>{if(chk('lg-f-'+k))s.flags[k]=true;});
   let warn=null;
   if(s.data.test){
-    const prev=S.sessions.filter(x=>x.type==='muscu'&&x.data&&x.data.test&&x.data.test.reps===s.data.test.reps&&x.date<date).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)[0];
-    if(prev){const wks=Math.max(1,Math.floor((dn(date)-dn(prev.date))/7));if(s.data.test.kg-prev.data.test.kg>2.5*wks+1e-9)warn=tr('tt.warnFast',{s:fmtShort(dn(prev.date))});}
+    if(type==='upper'){
+      const prev=S.sessions.filter(x=>(x.type==='upper'||x.type==='muscu')&&x.data&&x.data.test&&x.data.test.reps===s.data.test.reps&&x.date<date).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)[0];
+      if(prev){const wks=Math.max(1,Math.floor((dn(date)-dn(prev.date))/7));if(s.data.test.kg-prev.data.test.kg>2.5*wks+1e-9)warn=tr('tt.warnFast',{s:fmtShort(dn(prev.date))});}
+    }
     if(s.data.test.rpe>=9.5)warn=(warn?warn+' ':'')+tr('tt.never10');
   }
   const before=new Set(C.events.map(evKey));
@@ -1210,12 +1298,13 @@ const H={
     if(!demo){S.meta.lastBackup=todayStr();persist();const lb=$('#last-backup');if(lb)lb.textContent=fmtDay(dn(S.meta.lastBackup));renderAlerts();}},
   'restore':b=>{let s=null;try{s=JSON.parse(($('#restore-text').value||'').trim());}catch(e){}
     if(!valid(s)){toast(tr('tt.badBackup'));return;}
-    arm(b,()=>{if(!s.meta)s.meta={lastBackup:null};S=s;demo=false;REAL=null;persist();ui.logOpen=false;render();toast(tr('tt.restored'));});},
+    arm(b,()=>{if(!s.meta)s.meta={lastBackup:null};if(!s.meta.photos)s.meta.photos={};S=s;demo=false;REAL=null;persist();ui.logOpen=false;render();toast(tr('tt.restored'));});},
   'demo':()=>{REAL=S;S=generateDemo(todayStr());demo=true;ui.logOpen=false;ui.flash=null;render();showTab('today');toast(tr('tt.exOn'));},
   'exit-demo':()=>{if(REAL)S=REAL;REAL=null;demo=false;ui.logOpen=false;ui.flash=null;render();toast(tr('tt.exOff'));},
   'reset':b=>arm(b,()=>{S=freshState(todayStr());S.meta.credited='reset';demo=false;REAL=null;persist();ui.logOpen=false;ui.flash=null;render();toast(tr('tt.allDeleted'));}),
   'goto':b=>showTab(b.dataset.to),
   'dismiss':()=>{ui.flash=null;renderAlerts();},
+  'photos-done':b=>{S.meta.photos=S.meta.photos||{};S.meta.photos[b.dataset.k]=todayStr();persist();renderAlerts();renderPlan();renderData();toast(tr('tt.photosDone'));},
   'lang':b=>{const l=E.setLang(b.dataset.lang);try{localStorage.setItem(LANGKEY,l);}catch(e){}render();}
 };
 
@@ -1243,7 +1332,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&renderedD
 render();
 const hash=(location.hash||'').slice(1);
 let first='today';
-if(TABS.indexOf(hash)>=0)first=hash;else{try{const s=localStorage.getItem(UIKEY);if(TABS.indexOf(s)>=0)first=s;}catch(e){}}
+if(COACH)first='plan';else if(TABS.indexOf(hash)>=0)first=hash;else{try{const s=localStorage.getItem(UIKEY);if(TABS.indexOf(s)>=0)first=s;}catch(e){}}
 showTab(first);
 })();
 </script>
